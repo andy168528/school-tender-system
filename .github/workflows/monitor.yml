@@ -2,15 +2,15 @@ name: 每日監測學校招標
 
 on:
   schedule:
-    - cron: '30 0 * * *'   # 每日 08:30 HKT 開始，約 9:00 前完成
+    - cron: '0 0 * * *'    # 每日 08:00 HKT 開始（Gemini 免費版，放慢執行）
     - cron: '0 18 * * 6'   # 每週日 02:00 HKT 全面重新掃描所有學校
   workflow_dispatch:
     inputs:
       mode:
-        description: 'daily = 只檢查監測中網站；full = 全面重新掃描'
+        description: 'daily = 只檢查監測中網站；full = 全面重新掃描；discover = Gemini 複查未找到招標頁的學校；find_sites = Gemini 搜尋沒有網址的學校'
         default: daily
         type: choice
-        options: [daily, full]
+        options: [daily, full, discover, find_sites]
 
 permissions:
   contents: write
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,12 +39,21 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_BUDGET: '14400'
+          AI_BACKFILL: '99999'
         run: |
           MODE="${{ github.event.inputs.mode }}"
           if [ -z "$MODE" ]; then
             if [ "${{ github.event.schedule }}" = "0 18 * * 6" ]; then MODE=full; else MODE=daily; fi
           fi
-          python crawler/monitor.py "$MODE"
+          case "$MODE" in
+            discover) python crawler/discover.py ;;
+            find_sites) python crawler/find_sites.py ;;
+            *) python crawler/monitor.py "$MODE"
+               # use the rest of the free Gemini quota on the backlog
+               python crawler/discover.py || echo "::warning::discover failed"
+               python crawler/find_sites.py || echo "::warning::find_sites failed" ;;
+          esac
       - name: Commit data
         run: |
           git config user.name "school-tender-bot"

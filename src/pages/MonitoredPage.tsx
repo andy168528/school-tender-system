@@ -35,7 +35,7 @@ export default function MonitoredPage({ rows }: { rows: MonRow[] }) {
   return (
     <div className="space-y-4">
       <Card className="p-4">
-        <p className="mb-3 text-sm text-slate-600">以下學校的網站找到招標／報價位置，系統每日香港時間上午 9:00 自動檢查一次，發現新公告會加入「招標公告」頁。</p>
+        <p className="mb-3 text-sm text-slate-600">以下學校的網站找到招標／報價位置，系統每日香港時間上午 8:00 開始自動檢查一次，發現新公告會加入「招標公告」頁。</p>
         <SearchBox value={q} onChange={setQ} placeholder="搜尋學校名稱、地區、地址、網址…" />
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
           <MultiSelect label="學校種類" options={o.types} value={types} onChange={setTypes} counts={o.cT} />

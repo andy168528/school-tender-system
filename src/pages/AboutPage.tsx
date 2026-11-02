@@ -12,7 +12,7 @@ export default function AboutPage({ meta, counts }: { meta: Meta; counts: { scho
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-600">
           <li>學校名單來自教育局公開資料，共 <b>{counts.schools}</b> 間（中學、小學、特殊學校、幼稚園等），每日自動同步。</li>
           <li>程式讀取每間學校網站的首頁及內頁，找出「招標、報價、標書、Tender、Quotation」等欄目。找到的 <b>{counts.monitored}</b> 間列入「監測中學校」，其餘 <b>{counts.unmonitored}</b> 間列入「無法監測學校」並註明原因。</li>
-          <li><b>每日香港時間上午 9:00</b> 自動檢查所有監測中的招標頁，新公告會標示「新」，並排在「招標公告」表的最前面。</li>
+          <li><b>每日香港時間上午 8:00 開始</b>自動檢查所有監測中的招標頁，新公告會標示「新」，並排在「招標公告」表的最前面。</li>
           <li>每週日全面重新掃描所有學校網站。學校網站改版或新增招標頁，都會自動更新。</li>
           <li>程式會打開公告的 PDF 或網頁，讀出截標日期及公告日期，並按標題判斷工程種類。</li>
           <li>公告連續 3 次在學校網站上找不到，會標示「已下架」。</li>

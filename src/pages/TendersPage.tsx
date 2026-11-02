@@ -44,14 +44,13 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
   const [dateOpt, setDateOpt] = useState<typeof DATE_OPTS[number]>('全部日期')
   const [newOpt, setNewOpt] = useState<typeof NEW_OPTS[number]>('全部')
   const [sort, setSort] = useState<typeof SORT_OPTS[number]>('最新公告優先')
-  const [engOnly, setEngOnly] = useState(true)
   const [showGone, setShowGone] = useState(false)
   const [pdfOnly, setPdfOnly] = useState(false)
   const [needFix, setNeedFix] = useState(false)
   const [page, setPage] = useState(1)
   const today = todayHK()
 
-  const base = useMemo(() => rows.filter(r => (showGone || r.active) && (!engOnly || r.eng_types.length > 0)), [rows, showGone, engOnly])
+  const base = useMemo(() => rows.filter(r => (showGone || r.active) && r.eng_types.length > 0), [rows, showGone])
 
   const filtered = useMemo(() => {
     const from = { '全部日期': '', '近 7 日': addDays(today, -7), '近 30 日': addDays(today, -30), '近 90 日': addDays(today, -90), '近 1 年': addDays(today, -365) }[dateOpt]
@@ -134,7 +133,6 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
           <Segmented label="排序" options={[...SORT_OPTS]} value={sort} onChange={setSort} />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Toggle checked={engOnly} onChange={setEngOnly} label="只顯示工程相關" />
           <Toggle checked={pdfOnly} onChange={setPdfOnly} label="只顯示有 PDF／附件" />
           <Toggle checked={needFix} onChange={setNeedFix} label="只顯示 PDF 備份失敗（需人手處理）" />
           <Toggle checked={showGone} onChange={setShowGone} label="包括已從網站下架的公告" />
