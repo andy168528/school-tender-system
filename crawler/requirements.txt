@@ -3,3 +3,4 @@ beautifulsoup4==4.12.3
 pypdf==5.1.0
 playwright==1.49.1
 boto3==1.35.99
+lxml==5.3.0
