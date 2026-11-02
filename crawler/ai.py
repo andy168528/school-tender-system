@@ -3,7 +3,7 @@ import json, os, time, requests
 import classify
 
 KEY = os.environ.get('GEMINI_API_KEY', '').strip()
-MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
+MODELS = os.environ.get('GEMINI_MODEL', 'gemini-3.5-flash,gemini-3.5-flash-lite').split(',')
 BUDGET = 20 * 60
 _end = time.time() + BUDGET
 TYPES = [n for n, _ in classify.ENG_TYPES] + [classify.OTHER_ENG]
@@ -30,11 +30,12 @@ def judge(title, url, text):
     if not KEY or time.time() > _end: return None
     body = {'contents': [{'parts': [{'text': PROMPT.format(types='、'.join(TYPES), title=title, url=url, text=text[:4000] or '（未能讀取）')}]}],
             'generationConfig': {'responseMimeType': 'application/json', 'responseSchema': SCHEMA, 'temperature': 0,
-                                 'thinkingConfig': {'thinkingBudget': 0}}}
+                                 'thinkingConfig': {'thinkingLevel': 'low'}}}
     for attempt in range(4):
+        model = MODELS[min(attempt // 2, len(MODELS) - 1)].strip()
         try:
-            r = requests.post(f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent',
-                              headers={'x-goog-api-key': KEY}, json=body, timeout=60)
+            r = requests.post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+                              headers={'x-goog-api-key': KEY}, json=body, timeout=90)
             if r.status_code in (429, 500, 503):
                 time.sleep(5 * 2 ** attempt); continue
             r.raise_for_status()
