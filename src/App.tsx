@@ -43,7 +43,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-[1500px] items-center gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
           <img src="/logo.png" alt="凱雄工程" className="h-9 w-auto shrink-0 rounded sm:h-12" />
           <div className="min-w-0">
