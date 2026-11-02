@@ -9,6 +9,7 @@ const ENG_ORDER = ['樓宇維修保養', '機電工程 (E&M)', '水電維修', '
 const DATE_OPTS = ['全部日期', '近 7 日', '近 30 日', '近 90 日', '近 1 年'] as const
 const NEW_OPTS = ['全部', '今日新增', '近 7 日新增'] as const
 const SORT_OPTS = ['最新公告優先', '截標日期（最近先）', '學校名稱'] as const
+const pubText = (r: TenderRow) => r.published && r.published_src === '網址' ? `約 ${r.published.slice(0, 7)}` : r.published
 const PAGE = 50
 
 function statusBadge(r: TenderRow) {
@@ -168,7 +169,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                 {r.types.map(t => <Badge key={t} tone={t === NON_ENG ? 'slate' : 'blue'}>{t}</Badge>)}
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
-                <div><div className="text-slate-400">公告日期</div><div className="font-medium text-slate-800">{r.published || (r.baseline ? '首次掃描已存在' : `發現於 ${r.first_seen}`)}</div></div>
+                <div><div className="text-slate-400">公告日期</div><div className="font-medium text-slate-800">{pubText(r) || (r.baseline ? '首次掃描已存在' : `發現於 ${r.first_seen}`)}</div></div>
                 <div><div className="text-slate-400">截標日期</div><div className="font-medium text-slate-800">{r.deadline || '—'}</div></div>
               </div>
               {r.ai?.summary && <div className="mt-2 text-xs text-slate-500">AI：{r.ai.summary}</div>}
@@ -200,7 +201,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
               {pageRows.map(r => (
                 <tr key={r.id} className={`align-top hover:bg-slate-50 ${!r.active ? 'opacity-60' : ''}`}>
                   <td className="whitespace-nowrap px-3 py-3">
-                    <div className="font-medium text-slate-800">{r.published || '—'}</div>
+                    <div className="font-medium text-slate-800">{pubText(r) || '—'}</div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {r.isToday ? <Badge tone="brand">今日新增</Badge> : r.isNew ? <Badge tone="red">新</Badge> : null}
                       {!r.active && <Badge>已下架</Badge>}

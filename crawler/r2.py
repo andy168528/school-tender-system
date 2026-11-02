@@ -104,7 +104,7 @@ def download(url):
 
 def backup(t, today):
     """Download t['url'] and store it in R2. Returns the resulting backup_state."""
-    data, err = download(t['url'])
+    data, err = download(crawl.doc_url(t['url']))
     if err:
         return _fail(t, *err)
     m = EXT.search(unquote(t['url']).split('?')[0].split('#')[0])

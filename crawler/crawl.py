@@ -17,6 +17,13 @@ ENG = re.compile(r'工程|改裝|重組|閉路電視|CCTV|佈線|圍欄|維修|�
 UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
       'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8'}
 SKIP_EXT = re.compile(r'\.(jpg|jpeg|png|gif|bmp|svg|mp4|mp3|wmv|avi|mov|zip|rar|exe|swf|ico|css|js)(\?|$)', re.I)
+GDRIVE = re.compile(r'(?:drive|docs)\.google\.com/(?:file/d/|open\?id=|uc\?(?:[^#]*&)?id=)([\w-]{20,})')
+
+def doc_url(u):
+    """Direct-download URL for Google Drive share links (the viewer page has no document text)."""
+    m = GDRIVE.search(u)
+    return f'https://drive.google.com/uc?export=download&id={m.group(1)}' if m else u
+
 DOC_EXT = re.compile(r'\.(pdf|docx?|xlsx?|pptx?)(\?|$)', re.I)
 MAX_PAGES = 18
 SITE_BUDGET = 200
