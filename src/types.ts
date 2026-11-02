@@ -10,7 +10,7 @@ export interface Site {
 export interface Tender {
   id: string; site: string; title: string; url: string; page: string; doc: boolean; eng_types: string[]
   first_seen: string; last_seen: string; miss: number; active: boolean; baseline?: boolean
-  deadline?: string; deadline_src?: string; published?: string; published_src?: string
+  deadline?: string; deadline_src?: string; published?: string; published_src?: string; backup?: string
 }
 export interface Run { at: string; mode: string; sites_checked: number; ok: number; new_tenders: number; new_eng: number; seconds: number }
 export interface Meta { updated_at: string; runs: Run[] }

@@ -165,6 +165,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                   <td className="whitespace-nowrap px-3 py-3 text-xs">
                     <div className="flex flex-col gap-1">
                       <ExtLink href={r.url}>{r.doc ? '📄 PDF／附件' : '🔗 公告'}</ExtLink>
+                      {r.backup && <ExtLink href={'/api/pdf?key=' + encodeURIComponent(r.backup)}>💾 備份副本</ExtLink>}
                       <ExtLink href={r.page}>招標頁</ExtLink>
                       <ExtLink href={r.site}>學校網站</ExtLink>
                     </div>

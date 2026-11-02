@@ -34,6 +34,10 @@ jobs:
       - name: Run monitor
         env:
           TZ: Asia/Hong_Kong
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_API_TOKEN: ${{ secrets.R2_API_TOKEN }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
           MODE="${{ github.event.inputs.mode }}"
           if [ -z "$MODE" ]; then
