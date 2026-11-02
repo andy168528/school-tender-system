@@ -57,7 +57,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     const from = { '全部日期': '', '近 7 日': addDays(today, -7), '近 30 日': addDays(today, -30), '近 90 日': addDays(today, -90), '近 1 年': addDays(today, -365) }[dateOpt]
     const out = base.filter(r => {
       const ss = r.schools
-      return matches(q, r.title, r.url, r.site, ...ss.flatMap(s => [s.name, s.name_en, s.district, s.address]))
+      return matches(q, r.title, r.ai?.summary || '', r.url, r.site, ...ss.flatMap(s => [s.name, s.name_en, s.district, s.address]))
         && inSel(types, ss.map(s => s.type)) && inSel(districts, ss.map(s => s.district)) && inSel(finance, ss.map(s => s.finance))
         && inSel(eng, r.types) && inSel(status, r.status)
         && (!from || r.date >= from)
@@ -177,6 +177,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                   </td>
                   <td className="min-w-[16rem] max-w-md px-3 py-3">
                     <ExtLink href={r.url} className="font-medium">{r.title}</ExtLink>
+                    {r.ai?.summary && <div className="mt-0.5 text-xs text-slate-500">AI：{r.ai.summary}</div>}
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex max-w-[12rem] flex-wrap gap-1">
