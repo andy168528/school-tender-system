@@ -157,7 +157,7 @@ def merge(sites, tenders, results, full):
     return new
 
 BROWSER_BUDGET = 20 * 60
-BROWSER_STALL = 180
+BROWSER_STALL = crawl.SITE_BUDGET + 120
 
 def run_crawl(site_list, browser_sites):
     results = []
@@ -177,7 +177,9 @@ def run_crawl(site_list, browser_sites):
             try:
                 it = pool.imap_unordered(pw.work, retry)
                 while True:
-                    r = it.next(timeout=max(1, min(BROWSER_STALL, end - time.time())))
+                    left = end - time.time()
+                    if left <= 0: raise mp.TimeoutError
+                    r = it.next(timeout=min(BROWSER_STALL, left))
                     got[r['site']] = r
             except StopIteration:
                 pass
