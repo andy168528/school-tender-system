@@ -158,7 +158,7 @@ def merge(sites, tenders, results, full, dropped):
         if r.get('browser'): s['browser'] = True
         if ok:
             s.update(monitored=True, reason='', monitor_url=mu, monitor_label=ml, confidence=conf)
-        elif full and not s.get('monitored'):
+        elif (full or s.get('reason') == '尚未掃描') and not s.get('monitored'):
             s.update(monitored=False, reason=reason)
         elif 'monitored' not in s:
             s.update(monitored=False, reason=reason)
@@ -245,6 +245,8 @@ def main():
     dropped = load('dropped.json', {})
     EXTRA.update({s['site']: s['ai_pages'] for s in sites.values() if s.get('ai_pages')})
     all_sites = sorted({s['website'] for s in schools if s['website']})
+    for s in all_sites:
+        sites.setdefault(s, {'site': s, 'monitored': False, 'reason': '尚未掃描'})
     if mode == 'bootstrap':
         best = {}
         for fn in sys.argv[2:]:
@@ -262,9 +264,6 @@ def main():
         browser_sites = {s for s in todo if sites.get(s, {}).get('browser')}
         print(mode, 'sites to crawl:', len(todo), flush=True)
         results = run_crawl(todo, browser_sites)
-    for s in all_sites:
-        if s not in sites and s not in {r['site'] for r in results}:
-            sites[s] = {'site': s, 'monitored': False, 'reason': '尚未掃描'}
     new = merge(sites, tenders, results, full, dropped)
     if mode == 'bootstrap':
         for t in tenders.values(): t['baseline'] = True
