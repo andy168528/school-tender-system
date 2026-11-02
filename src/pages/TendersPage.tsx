@@ -176,6 +176,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                   <td className="min-w-[16rem] max-w-md px-3 py-3">
                     <ExtLink href={r.url} className="font-medium">{r.title}</ExtLink>
                     {r.ai?.summary && <div className="mt-0.5 text-xs text-slate-500">AI：{r.ai.summary}</div>}
+                    {r.ai?.reason && <div className="mt-0.5 text-xs text-slate-400">判斷理由：{r.ai.reason}</div>}
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex max-w-[12rem] flex-wrap gap-1">

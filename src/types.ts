@@ -12,7 +12,7 @@ export interface Tender {
   first_seen: string; last_seen: string; miss: number; active: boolean; baseline?: boolean
   deadline?: string; deadline_src?: string; published?: string; published_src?: string; backup?: string
   backup_state?: 'ok' | 'dead' | 'school' | 'sys'; backup_error?: string; backup_tries?: number
-  ai?: { tender: boolean; eng: boolean; summary: string }
+  ai?: { tender: boolean; eng: boolean; summary: string; reason?: string }
 }
 export interface Run { at: string; mode: string; sites_checked: number; ok: number; new_tenders: number; new_eng: number; seconds: number
   backup?: { tried: number; ok: number; dead: number; school: number; sys: number; sys_msg?: string } }
