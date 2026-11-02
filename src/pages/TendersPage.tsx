@@ -18,6 +18,22 @@ function statusBadge(r: TenderRow) {
   return <Badge tone="blue">截標日期不明</Badge>
 }
 
+function needsManual(r: TenderRow) {
+  return !r.backup && (r.backup_state === 'dead' || r.backup_state === 'school')
+}
+
+function backupBadge(r: TenderRow) {
+  if (r.backup || !r.backup_state) return null
+  const tip = `${r.backup_error || ''}${r.backup_state === 'school' ? `（已嘗試 ${r.backup_tries || 1} 次）` : ''}\n請按「公告」、「招標頁」或「學校網站」人手查看及下載。`
+  const label = r.backup_state === 'dead' ? 'PDF已失效' : r.backup_state === 'school' ? '備份失敗・需人手處理' : '系統未能備份'
+  return (
+    <span title={tip} className="whitespace-normal">
+      <Badge tone={r.backup_state === 'sys' ? 'slate' : r.backup_state === 'dead' ? 'red' : 'amber'}>{label}</Badge>
+      <div className="mt-0.5 max-w-[11rem] whitespace-normal text-[11px] leading-tight text-slate-500">{r.backup_error}</div>
+    </span>
+  )
+}
+
 export default function TendersPage({ rows, meta, monitoredSchools }: { rows: TenderRow[]; meta: Meta; monitoredSchools: number }) {
   const [q, setQ] = useState('')
   const [types, setTypes] = useState<string[]>([])
@@ -31,6 +47,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
   const [engOnly, setEngOnly] = useState(true)
   const [showGone, setShowGone] = useState(false)
   const [pdfOnly, setPdfOnly] = useState(false)
+  const [needFix, setNeedFix] = useState(false)
   const [page, setPage] = useState(1)
   const today = todayHK()
 
@@ -46,6 +63,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
         && (!from || r.date >= from)
         && (newOpt === '全部' || (newOpt === '今日新增' ? r.isToday : r.isNew))
         && (!pdfOnly || r.doc)
+        && (!needFix || needsManual(r))
     })
     const name = (r: TenderRow) => r.school?.name || r.site
     if (sort === '最新公告優先') out.sort((a, b) => Number(b.isNew) - Number(a.isNew) || b.date.localeCompare(a.date) || b.first_seen.localeCompare(a.first_seen))
@@ -55,7 +73,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     })
     else out.sort((a, b) => name(a).localeCompare(name(b), 'zh-HK'))
     return out
-  }, [base, q, types, districts, finance, eng, status, dateOpt, newOpt, sort, pdfOnly, today])
+  }, [base, q, types, districts, finance, eng, status, dateOpt, newOpt, sort, pdfOnly, needFix, today])
 
   useEffect(() => setPage(1), [filtered])
 
@@ -74,8 +92,8 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
   const openEng = engRows.filter(r => r.status === '未截標').length
   const newWeek = rows.filter(r => r.isNew && r.eng_types.length).length
   const lastRun = meta.runs[0]
-  const anyFilter = q || types.length || districts.length || eng.length || status.length || finance.length || dateOpt !== '全部日期' || newOpt !== '全部' || pdfOnly
-  const reset = () => { setQ(''); setTypes([]); setDistricts([]); setEng([]); setStatus([]); setFinance([]); setDateOpt('全部日期'); setNewOpt('全部'); setPdfOnly(false) }
+  const anyFilter = q || types.length || districts.length || eng.length || status.length || finance.length || dateOpt !== '全部日期' || newOpt !== '全部' || pdfOnly || needFix
+  const reset = () => { setQ(''); setTypes([]); setDistricts([]); setEng([]); setStatus([]); setFinance([]); setDateOpt('全部日期'); setNewOpt('全部'); setPdfOnly(false); setNeedFix(false) }
   const pageRows = filtered.slice((page - 1) * PAGE, page * PAGE)
 
   const exportCSV = () => downloadCSV(`學校工程招標_${today}.csv`,
@@ -83,8 +101,14 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     filtered.map(r => [r.schools.map(s => s.name).join(' / '), r.school?.type || '', r.school?.district || '', r.title, r.types.join('、'),
       r.published || '', r.deadline || '', r.status, r.url, r.page, r.baseline ? '首次掃描' : r.first_seen]))
 
+  const bk = lastRun?.backup
   return (
     <div className="space-y-4">
+      {bk && bk.sys > 0 && (
+        <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <b>PDF 備份系統出錯：</b>{bk.sys_msg || '未知原因'}（影響 {bk.sys} 份檔案）。這是系統／Cloudflare 設定問題，修正後下次執行會自動補回備份。
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="未截標工程招標" value={openEng} tone="green" hint="有截標日期而未過期" onClick={() => { reset(); setStatus(['未截標']) }} />
         <Stat label="近 7 日新發現（工程）" value={newWeek} tone="brand" hint="首次掃描之後的新公告" onClick={() => { reset(); setNewOpt('近 7 日新增') }} />
@@ -112,6 +136,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
         <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
           <Toggle checked={engOnly} onChange={setEngOnly} label="只顯示工程相關" />
           <Toggle checked={pdfOnly} onChange={setPdfOnly} label="只顯示有 PDF／附件" />
+          <Toggle checked={needFix} onChange={setNeedFix} label="只顯示 PDF 備份失敗（需人手處理）" />
           <Toggle checked={showGone} onChange={setShowGone} label="包括已從網站下架的公告" />
           {anyFilter ? <button onClick={reset} className="text-sm text-brand hover:underline">清除所有篩選</button> : null}
           <span className="ml-auto text-sm text-slate-500">找到 <b className="text-slate-900">{filtered.length}</b> 條公告</span>
@@ -166,6 +191,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                     <div className="flex flex-col gap-1">
                       <ExtLink href={r.url}>{r.doc ? '📄 PDF／附件' : '🔗 公告'}</ExtLink>
                       {r.backup && <ExtLink href={'/api/pdf?key=' + encodeURIComponent(r.backup)}>💾 備份副本</ExtLink>}
+                      {backupBadge(r)}
                       <ExtLink href={r.page}>招標頁</ExtLink>
                       <ExtLink href={r.site}>學校網站</ExtLink>
                     </div>
@@ -178,7 +204,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
         </div>
         <Pager page={page} pages={Math.ceil(filtered.length / PAGE)} total={filtered.length} onPage={p => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />
       </Card>
-      {lastRun && <p className="text-xs text-slate-400">上次執行：{fmtTime(lastRun.at)}，檢查 {lastRun.sites_checked} 個網站，新增 {lastRun.new_tenders} 條公告（工程 {lastRun.new_eng} 條）。截標日期由程式從標題或 PDF 自動讀取，投標前請以原文件為準。</p>}
+      {lastRun && <p className="text-xs text-slate-400">上次執行：{fmtTime(lastRun.at)}，檢查 {lastRun.sites_checked} 個網站，新增 {lastRun.new_tenders} 條公告（工程 {lastRun.new_eng} 條）{bk ? `；PDF 備份：成功 ${bk.ok}、已失效 ${bk.dead}、需人手 ${bk.school}、系統出錯 ${bk.sys}` : ''}。截標日期由程式從標題或 PDF 自動讀取，投標前請以原文件為準。</p>}
     </div>
   )
 }

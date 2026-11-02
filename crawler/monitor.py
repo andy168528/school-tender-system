@@ -214,13 +214,19 @@ def main():
     todo_detail = [t for t in tenders.values() if not t.get('detail_checked')]
     print('new tenders', len(new), 'detail fetch', len(todo_detail), flush=True)
     with cf.ThreadPoolExecutor(16) as ex: list(ex.map(extract_detail, todo_detail))
+    backup_run = None
     if r2.enabled():
         todo_backup = [t for t in tenders.values() if t.get('doc') and t.get('active', True) and not t.get('backup')
-                       and t.get('backup_tries', 0) < 3]
-        for t in todo_backup: t['backup_tries'] = t.get('backup_tries', 0) + 1
+                       and t.get('backup_tries', 0) < r2.MAX_TRIES]
         print('PDF backup', len(todo_backup), flush=True)
-        with cf.ThreadPoolExecutor(8) as ex: list(ex.map(lambda t: r2.backup(t, TODAY), todo_backup))
-        print('PDF backup ok', sum(bool(t.get('backup')) for t in todo_backup), flush=True)
+        with cf.ThreadPoolExecutor(8) as ex: states = list(ex.map(lambda t: r2.backup(t, TODAY), todo_backup))
+        backup_run = {k: states.count(k) for k in ('ok', 'dead', 'school', 'sys')}
+        backup_run['tried'] = len(states)
+        sys_msgs = sorted({t['backup_error'] for t in todo_backup if t.get('backup_state') == 'sys'})
+        if sys_msgs: backup_run['sys_msg'] = '；'.join(sys_msgs[:3])
+        print('PDF backup', backup_run, flush=True)
+    elif os.environ.get('GITHUB_ACTIONS'):
+        backup_run = {'tried': 0, 'ok': 0, 'dead': 0, 'school': 0, 'sys': 1, 'sys_msg': 'GitHub 未設定 Cloudflare R2 鑰匙'}
     counts = {}
     for t in tenders.values(): counts[t['site']] = counts.get(t['site'], 0) + 1
     for s in sites.values(): s['tender_count'] = counts.get(s['site'], 0)
@@ -233,6 +239,7 @@ def main():
     meta = load('meta.json', {'runs': []})
     run = {'at': NOW, 'mode': mode, 'sites_checked': len(results), 'ok': sum(r['status'] == 'ok' for r in results),
            'new_tenders': len(new), 'new_eng': sum(bool(t['eng_types']) for t in new), 'seconds': round(time.time() - t0)}
+    if backup_run: run['backup'] = backup_run
     meta['runs'] = ([run] + meta.get('runs', []))[:60]
     meta['updated_at'] = NOW
     save('meta.json', meta)

@@ -11,8 +11,10 @@ export interface Tender {
   id: string; site: string; title: string; url: string; page: string; doc: boolean; eng_types: string[]
   first_seen: string; last_seen: string; miss: number; active: boolean; baseline?: boolean
   deadline?: string; deadline_src?: string; published?: string; published_src?: string; backup?: string
+  backup_state?: 'ok' | 'dead' | 'school' | 'sys'; backup_error?: string; backup_tries?: number
 }
-export interface Run { at: string; mode: string; sites_checked: number; ok: number; new_tenders: number; new_eng: number; seconds: number }
+export interface Run { at: string; mode: string; sites_checked: number; ok: number; new_tenders: number; new_eng: number; seconds: number
+  backup?: { tried: number; ok: number; dead: number; school: number; sys: number; sys_msg?: string } }
 export interface Meta { updated_at: string; runs: Run[] }
 
 export type DeadlineStatus = '未截標' | '已截標' | '可能已截標' | '截標日期不明'
