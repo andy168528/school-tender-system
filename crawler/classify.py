@@ -83,6 +83,8 @@ def find_published(text, url=''):
     if ds: return ds[0][1]
     m = COMPACT.search(url)
     if m: return _mk(*m.groups())
+    m = re.search(r'/uploads/(20\d{2})/(0[1-9]|1[0-2])/', url)
+    if m: return _mk(m.group(1), m.group(2), 1)
     return None
 
 SCHOOL_TYPE = {

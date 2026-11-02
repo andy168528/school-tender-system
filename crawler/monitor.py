@@ -88,24 +88,34 @@ EXTRA = {}
 PRUNE_FAILED = []
 
 def fetch_text(t):
-    """Text of the notice (PDF first pages or HTML body); '' if unreadable."""
-    text = ''
+    """(text, pdf) of the notice: PDF / Word / HTML text ('' if unreadable); pdf = raw bytes when the PDF
+    has no text layer (scanned), so Gemini can read the page images itself."""
+    text, pdf = '', None
     try:
-        if t['url'].lower().split('?')[0].endswith('.pdf'):
-            r = crawl.sess().get(t['url'], timeout=(8, 30), stream=True)
-            data = r.raw.read(8_000_000, decode_content=True)
-            if data[:4] == b'%PDF':
+        u = crawl.doc_url(t['url'])
+        if u != t['url'] or crawl.DOC_EXT.search(t['url']):
+            r = crawl.sess().get(u, timeout=(10, 60), stream=True)
+            data = r.raw.read(30_000_000, decode_content=True)
+            if b'%PDF-' in data[:1024]:
                 from pypdf import PdfReader
                 rd = PdfReader(io.BytesIO(data))
                 text = ' '.join((p.extract_text() or '') for p in rd.pages[:4])
                 t['pdf_text'] = bool(text.strip())
-        elif not crawl.DOC_EXT.search(t['url']):
+                t['doc'] = True
+                if len(text.strip()) < 80 and len(data) < 7_000_000: pdf = data
+            elif data[:2] == b'PK':
+                import zipfile
+                z = zipfile.ZipFile(io.BytesIO(data))
+                if 'word/document.xml' in z.namelist():
+                    text = re.sub(r'<[^>]+>', ' ', z.read('word/document.xml').decode('utf-8', 'ignore'))[:30000]
+                    t['doc'] = True
+        else:
             fu, html, code = crawl.req_fetch(t['url'])
             if html and code < 400:
                 text = crawl.parse(fu, html)[2][:30000]
     except Exception as e:
         t['detail_error'] = type(e).__name__
-    return ' '.join(text.split())
+    return ' '.join(text.split()), pdf
 
 def needs_ai(t):
     a = t.get('ai')
@@ -113,15 +123,19 @@ def needs_ai(t):
 
 def extract_detail(t):
     """Fetch the notice (PDF/HTML) once and pull deadline / published date."""
-    text = fetch_text(t)
+    text, pdf = fetch_text(t)
     if not t.get('deadline'):
         d = classify.find_deadline(text)
         if d: t['deadline'] = d.isoformat(); t['deadline_src'] = '文件內容'
     if not t.get('published') and text and t.get('doc'):
         d = classify.find_published(text[:600])
         if d and d.isoformat() <= TODAY and d.isoformat() != t.get('deadline'): t['published'] = d.isoformat(); t['published_src'] = '文件內容'
-    j = ai.judge(t['title'], unquote(t['url']), text)
+    j = ai.judge(t['title'], unquote(t['url']), text, pdf)
     if j:
+        d, p = (ai.date(j.get('deadline')), ai.date(j.get('published'))) if text or pdf else (None, None)
+        if d and not t.get('deadline'): t['deadline'] = d; t['deadline_src'] = 'AI 讀取文件'
+        if p and p <= TODAY and p != t.get('deadline') and t.get('published_src') in (None, '網址'):
+            t['published'] = p; t['published_src'] = 'AI 讀取文件'
         t['ai'] = {'tender': j['tender'], 'eng': j['eng'], 'summary': j['summary'][:80], 'reason': j.get('reason', '')[:120],
                    'by': j['by'], 'v': ai.VERSION}
         t['eng_types'] = (j['types'] or [classify.OTHER_ENG]) if j['tender'] and j['eng'] else []
@@ -131,6 +145,9 @@ def extract_detail(t):
     elif not t.get('eng_types') and text and t.get('doc') and not classify.ENG_NEG.search(t['title'] + ' ' + unquote(t['url'])):
         et = classify.eng_types(t['title'] + ' ' + text[:400])
         if et: t['eng_types'] = et; t['types_src'] = '文件內容'
+    if not t.get('published'):
+        d = classify.find_published('', unquote(t['url']))
+        if d and d.isoformat() <= TODAY: t['published'] = d.isoformat(); t['published_src'] = '網址'
     t['detail_checked'] = TODAY
 
 GENERIC_TITLE = re.compile(r'^(下載|按此下載|按此|點擊下載|附件|附件連結|連結|檔案|文件|詳情|pdf|download|click here|here|more|link)$', re.I)

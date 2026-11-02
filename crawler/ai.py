@@ -1,5 +1,5 @@
 """Gemini check of each notice: is it a new tender, is it engineering, which types."""
-import json, os, re, threading, time, requests
+import base64, json, os, re, threading, time, requests, datetime as dt
 import classify
 
 KEY = os.environ.get('GEMINI_API_KEY', '').strip()
@@ -23,7 +23,7 @@ def _slot(model):
 TYPES = [n for n, _ in classify.ENG_TYPES] + [classify.OTHER_ENG]
 
 # Bump VERSION whenever SCOPE/PROMPT/eng_scope.md changes: every stored judgement with another version is re-checked.
-VERSION = 3
+VERSION = 4
 CONFIRM = [m.strip() for m in os.environ.get('GEMINI_CONFIRM_MODEL', 'gemini-3.5-flash').split(',') if m.strip()]
 
 SCOPE = """【算是工程（eng=true）】由承辦商或專業顧問在校舍、斜坡或屋宇設備上進行的建造、維修、改建、安裝、檢查或相關專業服務，按以下專業範疇：
@@ -57,6 +57,9 @@ PROMPT = """你是香港學校招標公告的分類員。以下是學校網站�
 3. types：如 eng 為 true，從以下選一個或多個：{types}
 4. summary：用繁體中文一句話（30字內）說明項目內容。
 5. reason：用繁體中文一句話說明 eng 的判斷理由，要指出屬於上面哪一類。
+6. deadline：文件寫明的截標／截止遞交日期，格式 YYYY-MM-DD；文件沒有寫明就留空，不要估計。
+7. published：文件寫明的招標／公告／發出日期，格式 YYYY-MM-DD；沒有寫明就留空。
+如有附件 PDF，以附件內容為準。
 
 標題：{title}
 網址：{url}
@@ -66,18 +69,27 @@ PROMPT = """你是香港學校招標公告的分類員。以下是學校網站�
 SCHEMA = {'type': 'OBJECT', 'properties': {
     'tender': {'type': 'BOOLEAN'}, 'eng': {'type': 'BOOLEAN'},
     'types': {'type': 'ARRAY', 'items': {'type': 'STRING', 'enum': TYPES}},
-    'summary': {'type': 'STRING'}, 'reason': {'type': 'STRING'}},
-    'required': ['tender', 'eng', 'types', 'summary', 'reason']}
+    'summary': {'type': 'STRING'}, 'reason': {'type': 'STRING'},
+    'deadline': {'type': 'STRING'}, 'published': {'type': 'STRING'}},
+    'required': ['tender', 'eng', 'types', 'summary', 'reason', 'deadline', 'published']}
 
-def judge(title, url, text):
+def date(s):
+    """Validated YYYY-MM-DD from Gemini, else None."""
+    try:
+        d = dt.date.fromisoformat((s or '').strip()[:10])
+        return d.isoformat() if 2015 <= d.year <= 2035 else None
+    except ValueError:
+        return None
+
+def judge(title, url, text, pdf=None):
     """Screen with the cheap model; anything it calls an engineering tender is re-checked by the stronger
     CONFIRM model. Returns dict (by='confirm' or 'screen' if the confirm model had no answer) or None."""
-    p = PROMPT.format(scope=SCOPE, types='、'.join(TYPES), title=title, url=url, text=text[:4000] or '（未能讀取）')
-    out = _ask(p, SCHEMA)
+    p = PROMPT.format(scope=SCOPE, types='、'.join(TYPES), title=title, url=url, text=text[:4000] or ('（見附件 PDF）' if pdf else '（未能讀取）'))
+    out = _ask(p, SCHEMA, pdf=pdf)
     if not out: return None
     out['by'] = 'screen'
     if out['tender'] and out['eng'] and CONFIRM:
-        c = _ask(p, SCHEMA, CONFIRM)
+        c = _ask(p, SCHEMA, CONFIRM, pdf=pdf)
         if c: out = dict(c, by='confirm')
     out['types'] = [t for t in out.get('types', []) if t in TYPES]
     return out
@@ -105,12 +117,14 @@ def find_site(s):
     m = re.search(r'https?://[^\s<>"\'）)]+', out)
     return m.group(0).rstrip('.,;') if m else ''
 
-def _ask(prompt, schema, models=None):
+def _ask(prompt, schema, models=None, pdf=None):
     """schema=None -> grounded with Google Search, returns plain text."""
     if not available(): return None
     cfg = {'temperature': 0, 'thinkingConfig': {'thinkingLevel': 'low'}}
     if schema: cfg.update(responseMimeType='application/json', responseSchema=schema)
-    body = {'contents': [{'parts': [{'text': prompt}]}], 'generationConfig': cfg}
+    parts = [{'text': prompt}]
+    if pdf: parts.append({'inline_data': {'mime_type': 'application/pdf', 'data': base64.b64encode(pdf).decode()}})
+    body = {'contents': [{'parts': parts}], 'generationConfig': cfg}
     if not schema: body['tools'] = [{'google_search': {}}]
     for attempt in range(6):
         live = [m.strip() for m in (models or MODELS) if m.strip() not in _spent]
