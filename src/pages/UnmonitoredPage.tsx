@@ -59,7 +59,24 @@ export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
         <div className="mt-3 text-right text-sm text-slate-500">找到 <b className="text-slate-900">{filtered.length}</b> 間學校</div>
       </Card>
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-slate-100 md:hidden">
+          {filtered.slice((page - 1) * PAGE, page * PAGE).map(r => (
+            <li key={r.school.id} className="p-4">
+              <div className="font-semibold text-slate-900">{r.school.name}</div>
+              <div className="text-xs text-slate-400">{r.school.name_en}</div>
+              <div className="mt-1.5 flex flex-wrap gap-1"><Badge tone={tone(r.reason)}>{r.reason}</Badge><Badge>{r.school.type}</Badge><Badge>{r.school.district}</Badge>
+                {r.site?.last_ok && <Badge tone="green">曾成功讀取</Badge>}</div>
+              {r.site?.error && <div className="mt-1 break-all text-xs text-slate-400">{r.site.error}</div>}
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                {r.school.website && <ExtLink href={r.school.website}>{host(r.school.website)}</ExtLink>}
+                {r.school.phone && <a href={'tel:' + r.school.phone.replace(/\s/g, '')} className="text-slate-600">☎ {r.school.phone}</a>}
+                {r.site?.last_checked && <span className="text-xs text-slate-400">最近檢查 {fmtTime(r.site.last_checked)}</span>}
+              </div>
+            </li>
+          ))}
+          {!filtered.length && <li className="px-3 py-12 text-center text-slate-400">沒有符合條件的學校</li>}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100 text-left text-xs font-semibold text-slate-600">
               <tr><th className="px-3 py-2.5">學校</th><th className="px-3 py-2.5">類型／地區</th><th className="px-3 py-2.5">無法監測原因</th><th className="px-3 py-2.5">學校網站</th><th className="px-3 py-2.5">最近檢查</th><th className="px-3 py-2.5">曾成功讀取</th></tr>

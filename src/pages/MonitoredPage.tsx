@@ -46,7 +46,27 @@ export default function MonitoredPage({ rows }: { rows: MonRow[] }) {
         <div className="mt-3 text-right text-sm text-slate-500">找到 <b className="text-slate-900">{filtered.length}</b> 間學校</div>
       </Card>
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-slate-100 md:hidden">
+          {filtered.slice((page - 1) * PAGE, page * PAGE).map(r => (
+            <li key={r.school.id} className="p-4">
+              <div className="font-semibold text-slate-900">{r.school.name}</div>
+              <div className="text-xs text-slate-400">{r.school.name_en}</div>
+              <div className="mt-1.5 flex flex-wrap gap-1"><Badge>{r.school.type}</Badge><Badge>{r.school.district}</Badge><Badge>{r.school.finance}</Badge>
+                <Badge tone={r.site.confidence === '高' ? 'green' : r.site.confidence === '中' ? 'blue' : 'amber'}>{CONF_TXT[r.site.confidence || ''] || '—'}</Badge></div>
+              <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                <div><div className="text-slate-400">公告數</div><div><b>{r.engCount}</b> 工程 ／ {r.total} 全部</div></div>
+                <div><div className="text-slate-400">最近檢查</div><div>{fmtTime(r.site.last_checked)}</div>{(r.site.fail || 0) > 0 && <div className="mt-1"><Badge tone="amber">上次讀取失敗</Badge></div>}</div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                <ExtLink href={r.site.monitor_url}>{r.site.monitor_label || '招標頁'}</ExtLink>
+                <ExtLink href={r.site.site}>學校網站</ExtLink>
+                {r.school.phone && <a href={'tel:' + r.school.phone.replace(/\s/g, '')} className="text-slate-600">☎ {r.school.phone}</a>}
+              </div>
+            </li>
+          ))}
+          {!filtered.length && <li className="px-3 py-12 text-center text-slate-400">沒有符合條件的學校</li>}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100 text-left text-xs font-semibold text-slate-600">
               <tr><th className="px-3 py-2.5">學校</th><th className="px-3 py-2.5">類型／地區</th><th className="px-3 py-2.5">監測位置</th><th className="px-3 py-2.5">可信度</th><th className="px-3 py-2.5">公告數</th><th className="px-3 py-2.5">最近檢查</th><th className="px-3 py-2.5">學校網站</th></tr>
