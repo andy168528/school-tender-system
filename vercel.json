@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "headers": [{ "source": "/data/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }]
+}
