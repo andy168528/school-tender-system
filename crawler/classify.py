@@ -4,7 +4,11 @@ ENG_STRONG = re.compile(r'工程|裝修|翻新|改善|改建|加建|拆卸|改�
 ENG_WEAK = re.compile(r'維修|維護|保養|修葺|修繕|修理|更換|安裝|檢查|檢驗|測試|閉路電視|CCTV|佈線|maintenance|repair|upgrad|install|replace|inspection|testing', re.I)
 ENG_NEG = re.compile(r'網頁|網站|電腦|軟件|伺服器|網絡|影印|打印|印表|多媒體|平板|校車|校巴|午膳|小食|校服|書簿|課本|教科書|導師|課程|IT\b|software|website|web\b|network|server|computer|copier|photocop|printer|multimedia|tablet|ipad|textbook|tutor|lunch|uniform', re.I)
 
+RESULT = re.compile(r'中標公司|中標者|中標商|中標結果|招標結果|報價結果|批出合約|awarded to|successful (?:tenderer|bidder)', re.I)
+BOILER = re.compile(r'維護國家安全|國家安全|防止賄賂條例|防止串通行為|利益衝突')
+
 def is_eng(text):
+    text = BOILER.sub(' ', text)
     if ENG_STRONG.search(text) and not re.search(r'網頁|網站|website|software|軟件', text, re.I): return True
     return bool(ENG_WEAK.search(text)) and not ENG_NEG.search(text)
 
@@ -22,6 +26,7 @@ OTHER_ENG = '其他工程'
 NON_ENG = '非工程（服務／物品）'
 
 def eng_types(text):
+    text = BOILER.sub(' ', text)
     if not is_eng(text): return []
     t = [n for n, rx in ENG_TYPES_RX if rx.search(text)]
     return t or [OTHER_ENG]
