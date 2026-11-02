@@ -7,10 +7,10 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 export function Stat({ label, value, hint, tone = 'slate', onClick }: { label: string; value: ReactNode; hint?: string; tone?: 'slate' | 'brand' | 'green' | 'amber'; onClick?: () => void }) {
   const c = { slate: 'text-slate-900', brand: 'text-brand', green: 'text-emerald-600', amber: 'text-amber-600' }[tone]
   return (
-    <Card className={`p-4 ${onClick ? 'cursor-pointer hover:border-brand' : ''}`}>
+    <Card className={`p-3 sm:p-4 ${onClick ? 'cursor-pointer hover:border-brand' : ''}`}>
       <div onClick={onClick}>
         <div className="text-xs font-medium text-slate-500">{label}</div>
-        <div className={`mt-1 text-2xl font-bold ${c}`}>{value}</div>
+        <div className={`mt-1 text-xl font-bold sm:text-2xl ${c}`}>{value}</div>
         {hint && <div className="mt-0.5 text-xs text-slate-400">{hint}</div>}
       </div>
     </Card>

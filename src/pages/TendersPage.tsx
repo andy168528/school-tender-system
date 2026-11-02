@@ -48,6 +48,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
   const [pdfOnly, setPdfOnly] = useState(false)
   const [needFix, setNeedFix] = useState(false)
   const [page, setPage] = useState(1)
+  const [showFilters, setShowFilters] = useState(false)
   const today = todayHK()
 
   const base = useMemo(() => rows.filter(r => (showGone || r.active) && r.eng_types.length > 0), [rows, showGone])
@@ -92,6 +93,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
   const newWeek = rows.filter(r => r.isNew && r.eng_types.length).length
   const lastRun = meta.runs[0]
   const anyFilter = q || types.length || districts.length || eng.length || status.length || finance.length || dateOpt !== '全部日期' || newOpt !== '全部' || pdfOnly || needFix
+  const nFilter = types.length + districts.length + eng.length + status.length + finance.length + Number(dateOpt !== '全部日期') + Number(newOpt !== '全部') + Number(pdfOnly) + Number(needFix) + Number(showGone)
   const reset = () => { setQ(''); setTypes([]); setDistricts([]); setEng([]); setStatus([]); setFinance([]); setDateOpt('全部日期'); setNewOpt('全部'); setPdfOnly(false); setNeedFix(false) }
   const pageRows = filtered.slice((page - 1) * PAGE, page * PAGE)
 
@@ -119,10 +121,14 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
         <div className="grid gap-3 md:grid-cols-[1fr_auto]">
           <SearchBox value={q} onChange={setQ} placeholder="搜尋學校名稱、公告標題、地區、地址、網址… (可輸入多個字詞，以空格分隔)" />
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowFilters(!showFilters)}
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm md:hidden ${nFilter ? 'border-brand text-brand' : 'border-slate-300 text-slate-700'}`}>
+              {showFilters ? '收起篩選 ▴' : `篩選及排序${nFilter ? `（已選 ${nFilter} 項）` : ''} ▾`}
+            </button>
             <button onClick={exportCSV} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:border-brand hover:text-brand">匯出 Excel (CSV)</button>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
+        <div className={`mt-3 grid-cols-2 gap-3 md:grid md:grid-cols-4 xl:grid-cols-8 ${showFilters ? 'grid' : 'hidden'}`}>
           <MultiSelect label="學校種類" options={opts.types} value={types} onChange={setTypes} counts={opts.cType} />
           <MultiSelect label="地區" options={opts.districts} value={districts} onChange={setDistricts} counts={opts.cDist} />
           <MultiSelect label="工程種類" options={opts.eng} value={eng} onChange={setEng} counts={opts.cEng} />
@@ -133,16 +139,52 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
           <Segmented label="排序" options={[...SORT_OPTS]} value={sort} onChange={setSort} />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Toggle checked={pdfOnly} onChange={setPdfOnly} label="只顯示有 PDF／附件" />
-          <Toggle checked={needFix} onChange={setNeedFix} label="只顯示 PDF 備份失敗（需人手處理）" />
-          <Toggle checked={showGone} onChange={setShowGone} label="包括已從網站下架的公告" />
+          <div className={`flex-wrap gap-x-6 gap-y-2 md:flex ${showFilters ? 'flex' : 'hidden'}`}>
+            <Toggle checked={pdfOnly} onChange={setPdfOnly} label="只顯示有 PDF／附件" />
+            <Toggle checked={needFix} onChange={setNeedFix} label="只顯示 PDF 備份失敗（需人手處理）" />
+            <Toggle checked={showGone} onChange={setShowGone} label="包括已從網站下架的公告" />
+          </div>
           {anyFilter ? <button onClick={reset} className="text-sm text-brand hover:underline">清除所有篩選</button> : null}
           <span className="ml-auto text-sm text-slate-500">找到 <b className="text-slate-900">{filtered.length}</b> 條公告</span>
         </div>
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-slate-100 md:hidden">
+          {pageRows.map(r => (
+            <li key={r.id} className={`p-4 ${!r.active ? 'opacity-60' : ''}`}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {statusBadge(r)}
+                {r.isToday ? <Badge tone="brand">今日新增</Badge> : r.isNew ? <Badge tone="red">新</Badge> : null}
+                {!r.active && <Badge>已下架</Badge>}
+              </div>
+              <ExtLink href={r.url} className="mt-2 block text-[15px] font-semibold leading-snug">{r.title}</ExtLink>
+              <div className="mt-1.5 text-sm font-medium text-slate-800">{r.school?.name || r.site}
+                {r.schools.length > 1 && <span className="ml-1 text-xs font-normal text-slate-500">＋同網站另 {r.schools.length - 1} 間</span>}
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {r.school && <Badge>{r.school.type}</Badge>}
+                {r.school && <Badge>{r.school.district}</Badge>}
+                {r.types.map(t => <Badge key={t} tone={t === NON_ENG ? 'slate' : 'blue'}>{t}</Badge>)}
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                <div><div className="text-slate-400">公告日期</div><div className="font-medium text-slate-800">{r.published || (r.baseline ? '首次掃描已存在' : `發現於 ${r.first_seen}`)}</div></div>
+                <div><div className="text-slate-400">截標日期</div><div className="font-medium text-slate-800">{r.deadline || '—'}</div></div>
+              </div>
+              {r.ai?.summary && <div className="mt-2 text-xs text-slate-500">AI：{r.ai.summary}</div>}
+              {r.ai?.reason && <div className="mt-0.5 text-xs text-slate-400">判斷理由：{r.ai.reason}</div>}
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                <ExtLink href={r.url}>{r.doc ? '📄 PDF／附件' : '🔗 公告'}</ExtLink>
+                {r.backup && <ExtLink href={'/api/pdf?key=' + encodeURIComponent(r.backup)}>💾 備份副本</ExtLink>}
+                <ExtLink href={r.page}>招標頁</ExtLink>
+                <ExtLink href={r.site}>學校網站</ExtLink>
+              </div>
+              {!r.backup && r.backup_state && <div className="mt-1.5">{backupBadge(r)}</div>}
+            </li>
+          ))}
+          {!pageRows.length && <li className="px-3 py-12 text-center text-slate-400">沒有符合條件的公告</li>}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100 text-left text-xs font-semibold text-slate-600">
               <tr>

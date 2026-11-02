@@ -44,26 +44,26 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-4 px-4 py-3">
-          <img src="/logo.png" alt="凱雄工程" className="h-12 w-auto rounded" />
+        <div className="mx-auto flex max-w-[1500px] items-center gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
+          <img src="/logo.png" alt="凱雄工程" className="h-9 w-auto shrink-0 rounded sm:h-12" />
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-slate-900 md:text-xl">凱雄-學校工程自動化招標系統</h1>
-            <p className="text-xs text-slate-500">全港學校招標公告每日自動監測・每日上午 8:00 開始更新{data && `・最近更新 ${fmtTime(data.meta.updated_at)}`}</p>
+            <h1 className="text-base font-bold leading-tight text-slate-900 sm:text-lg md:text-xl">凱雄-學校工程自動化招標系統</h1>
+            <p className="text-xs text-slate-500"><span className="hidden sm:inline">全港學校招標公告每日自動監測・每日上午 8:00 開始更新・</span>{data && `最近更新 ${fmtTime(data.meta.updated_at)}`}</p>
           </div>
         </div>
-        <nav className="mx-auto flex max-w-[1500px] gap-1 overflow-x-auto px-4">
+        <nav className="mx-auto flex max-w-[1500px] gap-1 overflow-x-auto px-1 sm:px-4">
           {TABS.map(t => {
             const n = t.id === 'tenders' ? counts.tenders : t.id === 'monitored' ? counts.monitored : t.id === 'unmonitored' ? counts.unmonitored : undefined
             return (
               <a key={t.id} href={'#' + t.id}
-                className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition ${tab === t.id ? 'border-brand text-brand' : 'border-transparent text-slate-600 hover:text-slate-900'}`}>
+                className={`whitespace-nowrap border-b-2 px-3 py-2.5 sm:px-4 text-sm font-medium transition ${tab === t.id ? 'border-brand text-brand' : 'border-transparent text-slate-600 hover:text-slate-900'}`}>
                 {t.label}{n !== undefined && <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${tab === t.id ? 'bg-brand-light' : 'bg-slate-100'}`}>{n}</span>}
               </a>
             )
           })}
         </nav>
       </header>
-      <main className="mx-auto max-w-[1500px] px-4 py-5">
+      <main className="mx-auto max-w-[1500px] px-3 py-4 sm:px-4 sm:py-5">
         {err && <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">資料載入失敗：{err}</div>}
         {!data && !err && <div className="py-20 text-center text-slate-400">載入資料中…</div>}
         {data && derived && (

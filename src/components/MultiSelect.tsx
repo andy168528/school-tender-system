@@ -30,7 +30,7 @@ export default function MultiSelect({ label, options, value, onChange, counts }:
         <svg className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor"><path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z" /></svg>
       </button>
       {open && (
-        <div className="absolute z-30 mt-1 w-full min-w-[15rem] rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div className="absolute z-30 mt-1 w-full sm:min-w-[15rem] rounded-lg border border-slate-200 bg-white shadow-lg">
           {options.length > 8 && (
             <div className="border-b p-2">
               <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="搜尋選項…"
