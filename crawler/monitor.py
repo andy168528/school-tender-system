@@ -87,8 +87,8 @@ AI_BACKFILL = int(os.environ.get('AI_BACKFILL', 400))
 EXTRA = {}
 PRUNE_FAILED = []
 
-def extract_detail(t):
-    """Fetch the notice (PDF/HTML) once and pull deadline / published date."""
+def fetch_text(t):
+    """Text of the notice (PDF first pages or HTML body); '' if unreadable."""
     text = ''
     try:
         if t['url'].lower().split('?')[0].endswith('.pdf'):
@@ -105,7 +105,15 @@ def extract_detail(t):
                 text = crawl.parse(fu, html)[2][:30000]
     except Exception as e:
         t['detail_error'] = type(e).__name__
-    text = ' '.join(text.split())
+    return ' '.join(text.split())
+
+def needs_ai(t):
+    a = t.get('ai')
+    return t.get('detail_checked') and (not a or a.get('v') != ai.VERSION or (a.get('by') == 'screen' and a['tender'] and a['eng']))
+
+def extract_detail(t):
+    """Fetch the notice (PDF/HTML) once and pull deadline / published date."""
+    text = fetch_text(t)
     if not t.get('deadline'):
         d = classify.find_deadline(text)
         if d: t['deadline'] = d.isoformat(); t['deadline_src'] = '文件內容'
@@ -114,7 +122,8 @@ def extract_detail(t):
         if d and d.isoformat() <= TODAY and d.isoformat() != t.get('deadline'): t['published'] = d.isoformat(); t['published_src'] = '文件內容'
     j = ai.judge(t['title'], unquote(t['url']), text)
     if j:
-        t['ai'] = {'tender': j['tender'], 'eng': j['eng'], 'summary': j['summary'][:80]}
+        t['ai'] = {'tender': j['tender'], 'eng': j['eng'], 'summary': j['summary'][:80], 'reason': j.get('reason', '')[:120],
+                   'by': j['by'], 'v': ai.VERSION}
         t['eng_types'] = (j['types'] or [classify.OTHER_ENG]) if j['tender'] and j['eng'] else []
         t['types_src'] = 'AI'
     elif classify.RESULT.search(text[:3000]):
@@ -269,7 +278,7 @@ def main():
         for t in tenders.values(): t['baseline'] = True
     todo_detail = [t for t in tenders.values() if not t.get('detail_checked')]
     if ai.KEY:
-        todo_detail += [t for t in tenders.values() if t.get('detail_checked') and 'ai' not in t][:AI_BACKFILL]
+        todo_detail += [t for t in tenders.values() if needs_ai(t)][:AI_BACKFILL]
     print('new tenders', len(new), 'detail fetch', len(todo_detail), flush=True)
     with cf.ThreadPoolExecutor(16) as ex: list(ex.map(extract_detail, todo_detail))
     prune(tenders, dropped)

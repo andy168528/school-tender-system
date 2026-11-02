@@ -1,20 +1,24 @@
 import re, datetime as dt
 
 ENG_STRONG = re.compile(r'工程|裝修|翻新|改善|改建|加建|拆卸|改裝|冷氣|空調|電力|電氣|機電|水電|水喉|渠務|排水|消防|樓宇|屋宇|驗樓|滲水|漏水|防水|天台|外牆|油漆|髹|粉飾|地台|地板|天花|窗戶|鋁窗|門閘|閘門|升降機|電梯|照明|燈具|供水|食水|沖廁|潔具|廁所|洗手間|校舍|圍網|圍欄|棚架|石屎|混凝土|結構|白蟻|太陽能|works?\b|renovat|refurbish|alteration|addition|A\s*&\s*A|E\s*&\s*M|electrical|plumbing|drain|seepage|leak|waterproof|air[- ]?condition|ventilation|fire service|lifts?(?![a-z])|painting|lighting|toilet|roof|fa[cç]ade|concrete|builder|solar|building', re.I)
-ENG_WEAK = re.compile(r'維修|維護|保養|修葺|修繕|修理|更換|安裝|檢查|檢驗|測試|閉路電視|CCTV|佈線|maintenance|repair|upgrad|install|replace|inspection|testing', re.I)
+ENG_WEAK = re.compile(r'維修|維護|保養|修葺|修繕|修理|更換|安裝|檢查|檢驗|測試|maintenance|repair|upgrad|install|replace|inspection|testing', re.I)
 ENG_NEG = re.compile(r'網頁|網站|電腦|軟件|伺服器|網絡|影印|打印|印表|多媒體|平板|校車|校巴|午膳|小食|校服|書簿|課本|教科書|導師|課程|IT\b|software|website|web\b|network|server|computer|copier|photocop|printer|multimedia|tablet|ipad|textbook|tutor|lunch|uniform', re.I)
 
 RESULT = re.compile(r'中標公司|中標者|中標商|中標結果|招標結果|報價結果|批出合約|awarded to|successful (?:tenderer|bidder)', re.I)
+# Same exclusions as ai.SCOPE: art, gardening, AV/IT/security equipment supply, networking.
+EXCLUDE = re.compile(r'壁畫|彩繪|馬賽克|貼畫創作|藝術|工作坊|mural|園藝|花圃|草坪|種植|garden|landscap|觸控|觸屏|白板|LED\s*(?:wall|牆|顯示)|顯示屏|投影|音響|廣播|PA\s*system|舞台燈光|閉路電視|CCTV|門禁|保安系統|光纖|無線網絡|wi-?fi|網絡|佈線|AI智能', re.I)
+BUILD = re.compile(r'裝修|翻新|改建|加建|改裝|渠|消防|火警|renovat|refurbish|fitting[- ]?out|alteration|drain', re.I)
 BOILER = re.compile(r'維護國家安全|國家安全|防止賄賂條例|防止串通行為|利益衝突')
 
 def is_eng(text):
     text = BOILER.sub(' ', text)
+    if EXCLUDE.search(text) and not BUILD.search(text): return False
     if ENG_STRONG.search(text) and not re.search(r'網頁|網站|website|software|軟件', text, re.I): return True
     return bool(ENG_WEAK.search(text)) and not ENG_NEG.search(text)
 
 ENG_TYPES = [
     ('樓宇維修保養', r'樓宇維修|維修保養|大型維修|修葺|修繕|維修工程|保養工程|builder|building maintenance|repair works?|白蟻|油漆|髹|粉飾|painting|地台|地板|天花|窗戶|鋁窗|門閘|閘門|圍網|圍欄|棚架|石屎|混凝土|結構|外牆|fa[cç]ade|concrete|roof|天台|有蓋操場|校舍'),
-    ('機電工程 (E&M)', r'機電|E\s*&\s*M|冷氣|空調|通風|air[- ]?condition|ventilation|升降機|電梯|lifts?(?![a-z])|消防|fire service|電力|電氣|電器|electrical|照明|燈具|lighting|太陽能|solar|閉路電視|CCTV|佈線|發電機|水泵'),
+    ('機電工程 (E&M)', r'機電|E\s*&\s*M|冷氣|空調|通風|air[- ]?condition|ventilation|升降機|電梯|lifts?(?![a-z])|消防|fire service|電力|電氣|電器|electrical|照明|燈具|lighting|太陽能|solar|發電機|水泵'),
     ('水電維修', r'水電|水喉|供水|食水|沖廁|潔具|渠|排水|去水|plumbing|drain|toilet|廁所|洗手間|熱水爐'),
     ('小型工程 (Minor Works)', r'小型工程|minor works?'),
     ('改建加建 / 裝修 (A&A)', r'改建|加建|改裝|裝修|翻新|改善工程|拆卸|拆裝|A\s*&\s*A|alteration|addition|renovat|refurbish|fitting[- ]?out|conversion'),
