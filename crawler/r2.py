@@ -124,3 +124,12 @@ def backup(t, today):
     t.update(backup=key, backup_at=today, backup_size=len(data), backup_state='ok')
     t.pop('backup_error', None)
     return 'ok'
+
+
+def delete(key):
+    try:
+        client().delete_object(Bucket=BUCKET, Key=key)
+        return True
+    except Exception as e:
+        print('R2 delete failed', key, type(e).__name__, flush=True)
+        return False

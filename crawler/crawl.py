@@ -101,7 +101,11 @@ def nav_score(t, u):
         if rx.search(lab): s = max(s, w)
     return s
 
-def crawl_site(url, fetch=req_fetch, max_pages=MAX_PAGES):
+def reg_domain(h):
+    p = h.split('.')
+    return '.'.join(p[-3:] if len(p) >= 3 and p[-1] == 'hk' and p[-2] in ('edu', 'org', 'com', 'net', 'gov', 'idv') else p[-2:])
+
+def crawl_site(url, fetch=req_fetch, max_pages=MAX_PAGES, extra=()):
     t0 = time.time()
     res = {'site': url, 'status': None, 'final_url': None, 'tender_pages': [], 'items': [], 'content_hits': [],
            'pages': 0, 'thin': False, 'error': None, 'wp': False}
@@ -124,6 +128,9 @@ def crawl_site(url, fetch=req_fetch, max_pages=MAX_PAGES):
     domains = {host(url), host(home[0])}
     seen = set(); queue = [(0, 100, home[0], home[1], 'homepage')]
     seen.add(norm(url)); seen.add(norm(home[0]))
+    for e in extra:
+        if reg_domain(host(e)) in {reg_domain(d) for d in domains} and norm(e) not in seen:
+            seen.add(norm(e)); domains.add(host(e)); queue.append((1, 97, e, None, 'ai'))
     tender_seen = set(); item_seen = set()
     home_text_len = None
     visited = set()

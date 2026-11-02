@@ -48,7 +48,7 @@ export default function App() {
           <img src="/logo.png" alt="凱雄工程" className="h-12 w-auto rounded" />
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-slate-900 md:text-xl">凱雄-學校工程自動化招標系統</h1>
-            <p className="text-xs text-slate-500">全港學校招標公告每日自動監測・每日上午 9:00 更新{data && `・最近更新 ${fmtTime(data.meta.updated_at)}`}</p>
+            <p className="text-xs text-slate-500">全港學校招標公告每日自動監測・每日上午 8:00 開始更新{data && `・最近更新 ${fmtTime(data.meta.updated_at)}`}</p>
           </div>
         </div>
         <nav className="mx-auto flex max-w-[1500px] gap-1 overflow-x-auto px-4">
