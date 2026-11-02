@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import crawl, classify
+import crawl, classify, r2
 
 DATA = os.path.join(HERE, '..', 'public', 'data')
 EDB_URL = 'https://www.edb.gov.hk/attachment/en/student-parents/sch-info/sch-search/sch-location-info/SCH_LOC_EDB.json'
@@ -214,6 +214,13 @@ def main():
     todo_detail = [t for t in tenders.values() if not t.get('detail_checked')]
     print('new tenders', len(new), 'detail fetch', len(todo_detail), flush=True)
     with cf.ThreadPoolExecutor(16) as ex: list(ex.map(extract_detail, todo_detail))
+    if r2.enabled():
+        todo_backup = [t for t in tenders.values() if t.get('doc') and t.get('active', True) and not t.get('backup')
+                       and t.get('backup_tries', 0) < 3]
+        for t in todo_backup: t['backup_tries'] = t.get('backup_tries', 0) + 1
+        print('PDF backup', len(todo_backup), flush=True)
+        with cf.ThreadPoolExecutor(8) as ex: list(ex.map(lambda t: r2.backup(t, TODAY), todo_backup))
+        print('PDF backup ok', sum(bool(t.get('backup')) for t in todo_backup), flush=True)
     counts = {}
     for t in tenders.values(): counts[t['site']] = counts.get(t['site'], 0) + 1
     for s in sites.values(): s['tender_count'] = counts.get(s['site'], 0)
