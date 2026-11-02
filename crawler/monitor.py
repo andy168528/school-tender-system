@@ -156,6 +156,9 @@ def merge(sites, tenders, results, full):
     for t in tenders.values(): t['active'] = t.get('miss', 0) < MISS_LIMIT
     return new
 
+BROWSER_BUDGET = 20 * 60
+BROWSER_STALL = 180
+
 def run_crawl(site_list, browser_sites):
     results = []
     req_sites = [s for s in site_list if s not in browser_sites]
@@ -169,8 +172,19 @@ def run_crawl(site_list, browser_sites):
     if retry:
         try:
             import multiprocessing as mp, pw
-            with mp.Pool(6, initializer=pw.init) as pool:
-                got = {r['site']: r for r in pool.imap_unordered(pw.work, retry)}
+            got, end = {}, time.time() + BROWSER_BUDGET
+            pool = mp.get_context('spawn').Pool(6, initializer=pw.init)
+            try:
+                it = pool.imap_unordered(pw.work, retry)
+                while True:
+                    r = it.next(timeout=max(1, min(BROWSER_STALL, end - time.time())))
+                    got[r['site']] = r
+            except StopIteration:
+                pass
+            except mp.TimeoutError:
+                print('browser pass stopped early', len(got), '/', len(retry), flush=True)
+            finally:
+                pool.terminate()
             results = [got.get(r['site'], r) if r['status'] != 'ok' and got.get(r['site'], {}).get('status') == 'ok' else r for r in results]
             results += [got[s] for s in bs if s in got]
         except Exception as e:
