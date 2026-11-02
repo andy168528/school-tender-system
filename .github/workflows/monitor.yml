@@ -52,11 +52,16 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "data: $(TZ=Asia/Hong_Kong date '+%Y-%m-%d %H:%M') 自動更新"
           git pull --rebase && git push
-      - name: Check PDF backup
+      - name: Check run result
         run: |
           python - <<'EOF'
           import json, sys
-          b = json.load(open('public/data/meta.json'))['runs'][0].get('backup') or {}
+          run = json.load(open('public/data/meta.json'))['runs'][0]
+          print('sites ok:', run.get('ok'), '/', run.get('sites_checked'))
+          if run.get('sites_checked') and not run.get('ok'):
+              print('::error::監測系統出錯：所有網站都讀取失敗')
+              sys.exit(1)
+          b = run.get('backup') or {}
           print('PDF backup:', b)
           if b.get('sys'):
               print('::error::PDF 備份系統出錯：' + b.get('sys_msg', ''))
