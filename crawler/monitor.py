@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import crawl, classify, r2
+import crawl, classify, r2, ai
 
 DATA = os.path.join(HERE, '..', 'public', 'data')
 EDB_URL = 'https://www.edb.gov.hk/attachment/en/student-parents/sch-info/sch-search/sch-location-info/SCH_LOC_EDB.json'
@@ -80,6 +80,8 @@ def site_verdict(r):
 def tender_id(site, i):
     return hashlib.sha1((crawl.key(site) + '|' + crawl.key(i['url']) + '|' + i['text'].strip()).encode()).hexdigest()[:14]
 
+AI_BACKFILL = 400
+
 def extract_detail(t):
     """Fetch the notice (PDF/HTML) once and pull deadline / published date."""
     text = ''
@@ -105,14 +107,29 @@ def extract_detail(t):
     if not t.get('published') and text and t.get('doc'):
         d = classify.find_published(text[:600])
         if d and d.isoformat() <= TODAY and d.isoformat() != t.get('deadline'): t['published'] = d.isoformat(); t['published_src'] = '文件內容'
-    if not t.get('eng_types') and text and t.get('doc'):
+    j = ai.judge(t['title'], unquote(t['url']), text)
+    if j:
+        t['ai'] = {'tender': j['tender'], 'eng': j['eng'], 'summary': j['summary'][:80]}
+        t['eng_types'] = (j['types'] or [classify.OTHER_ENG]) if j['tender'] and j['eng'] else []
+        t['types_src'] = 'AI'
+    elif classify.RESULT.search(text[:3000]):
+        t['eng_types'] = []
+    elif not t.get('eng_types') and text and t.get('doc') and not classify.ENG_NEG.search(t['title'] + ' ' + unquote(t['url'])):
         et = classify.eng_types(t['title'] + ' ' + text[:400])
         if et: t['eng_types'] = et; t['types_src'] = '文件內容'
     t['detail_checked'] = TODAY
 
+GENERIC_TITLE = re.compile(r'^(下載|按此下載|按此|點擊下載|附件|附件連結|連結|檔案|文件|詳情|pdf|download|click here|here|more|link)$', re.I)
+
+def nice_title(text, url):
+    text = text.strip()
+    if text and not GENERIC_TITLE.match(re.sub(r'[\s:：>»\[\]()（）]', '', text)): return text
+    name = unquote(url.split('?')[0].rstrip('/').rsplit('/', 1)[-1])
+    return re.sub(r'\.\w{2,5}$', '', name) or text
+
 def new_tender(site, i):
     label = i['text'] + ' ' + unquote(i['url'])
-    t = {'id': tender_id(site, i), 'site': site, 'title': i['text'].strip() or unquote(i['url'].rsplit('/', 1)[-1]),
+    t = {'id': tender_id(site, i), 'site': site, 'title': nice_title(i['text'], i['url']),
          'url': i['url'], 'page': i['page'], 'doc': bool(i.get('doc')), 'eng_types': classify.eng_types(label),
          'first_seen': TODAY, 'last_seen': TODAY, 'miss': 0}
     d = classify.find_deadline(i['text'])
@@ -228,6 +245,8 @@ def main():
     if mode == 'bootstrap':
         for t in tenders.values(): t['baseline'] = True
     todo_detail = [t for t in tenders.values() if not t.get('detail_checked')]
+    if ai.KEY:
+        todo_detail += [t for t in tenders.values() if t.get('detail_checked') and t.get('active', True) and 'ai' not in t][:AI_BACKFILL]
     print('new tenders', len(new), 'detail fetch', len(todo_detail), flush=True)
     with cf.ThreadPoolExecutor(16) as ex: list(ex.map(extract_detail, todo_detail))
     backup_run = None
