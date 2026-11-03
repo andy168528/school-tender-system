@@ -1,6 +1,7 @@
 export interface School {
   id: string; name: string; name_en: string; type: string; category: string; finance: string
   district: string; address: string; phone: string; website: string
+  website_src?: string; website_edb?: string; sponsor?: string; sponsor_src?: string
 }
 export interface Site {
   site: string; monitored: boolean; reason?: string; monitor_url?: string; monitor_label?: string

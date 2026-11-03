@@ -56,6 +56,10 @@ def req_fetch(url):
     return r.url, decode(r), r.status_code
 
 def norm(u): return u.split('#')[0]
+def join(base, h):
+    """urljoin that returns '' for malformed hrefs (e.g. Chinese text in place of a host) instead of raising."""
+    try: return norm(urljoin(base, h))
+    except ValueError: return ''
 def key(u): return unquote(u).split('://',1)[-1].removeprefix('www.').rstrip('/')
 def host(u): return urlparse(u).netloc.lower().removeprefix('www.')
 
@@ -73,7 +77,7 @@ def parse(base, html):
         for k in li.find_all('a'):
             h = (k.get('href') or '').strip()
             if k is el or not h or h.startswith(('javascript', '#', 'mailto:')): continue
-            kids.append((norm(urljoin(base, h)), ' '.join(k.get_text(' ', strip=True).split())))
+            if join(base, h): kids.append((join(base, h), ' '.join(k.get_text(' ', strip=True).split())))
         if kids: links.append(('MENU::' + lab, lab, json.dumps(kids, ensure_ascii=False)))
     for a in soup.find_all(['a', 'area']):
         href = (a.get('href') or '').strip()
@@ -84,14 +88,14 @@ def parse(base, html):
         if not href or href.startswith(('mailto:', 'tel:', 'javascript', '#')): continue
         t = ' '.join(a.get_text(' ', strip=True).split())
         extra = ' '.join(filter(None, [a.get('title'), *(i.get('alt') for i in a.find_all('img'))]))
-        links.append((norm(urljoin(base, href)), t, extra))
-    frames = [norm(urljoin(base, f.get('src'))) for f in soup.find_all(['frame', 'iframe']) if f.get('src') and not f.get('src').startswith(('javascript', 'about'))]
+        if join(base, href): links.append((join(base, href), t, extra))
+    frames = [u for f in soup.find_all(['frame', 'iframe']) if f.get('src') and not f.get('src').startswith(('javascript', 'about')) for u in [join(base, f.get('src'))] if u]
     m = soup.find('meta', attrs={'http-equiv': re.compile('refresh', re.I)})
     if m and m.get('content'):
         mm = re.search(r'url\s*=\s*["\']?([^"\';]+)', m['content'], re.I)
-        if mm: frames.append(norm(urljoin(base, mm.group(1).strip())))
+        if mm and join(base, mm.group(1).strip()): frames.append(join(base, mm.group(1).strip()))
     for mm in re.finditer(r'(?:window\.|document\.|top\.)?location(?:\.href)?\s*=\s*["\']([^"\']+)["\']', html[:20000]):
-        frames.append(norm(urljoin(base, mm.group(1))))
+        if join(base, mm.group(1)): frames.append(join(base, mm.group(1)))
     for s in soup(['script', 'style', 'noscript']): s.decompose()
     text = ' '.join(soup.get_text(' ', strip=True).split())
     title = (soup.title.get_text(strip=True) if soup.title else '')
@@ -120,6 +124,8 @@ def crawl_site(url, fetch=req_fetch, max_pages=MAX_PAGES, extra=()):
     p = urlparse(url)
     alt = ('https' if p.scheme == 'http' else 'http') + url[len(p.scheme):]
     starts.append(alt)
+    if p.path.strip('/'):  # outdated deep links (e.g. /shanking/shanking.html → 404): fall back to the site root
+        starts.append(f'{p.scheme}://{p.netloc}/')
     home = None
     for u in starts:
         try:
