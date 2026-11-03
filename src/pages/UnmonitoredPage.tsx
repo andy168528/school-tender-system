@@ -13,25 +13,30 @@ export const REASONS: { key: string; desc: string; tone: 'slate' | 'amber' | 're
   { key: '尚未掃描', tone: 'slate', desc: '新加入名單的學校，下次每週全面掃描時會處理。' },
 ]
 const PAGE = 50
+const NO_SPONSOR = '未有資料'
+const sponsorOf = (s: School) => s.sponsor || NO_SPONSOR
 
 export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
   const [q, setQ] = useState('')
   const [reasons, setReasons] = useState<string[]>([])
   const [types, setTypes] = useState<string[]>([])
   const [districts, setDistricts] = useState<string[]>([])
+  const [sponsors, setSponsors] = useState<string[]>([])
   const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => rows.filter(r =>
-    matches(q, r.school.name, r.school.name_en, r.school.district, r.school.address, r.school.website)
-    && inSel(reasons, r.reason) && inSel(types, r.school.type) && inSel(districts, r.school.district)
-  ), [rows, q, reasons, types, districts])
+    matches(q, r.school.name, r.school.name_en, r.school.district, r.school.address, r.school.website, r.school.sponsor)
+    && inSel(reasons, r.reason) && inSel(types, r.school.type) && inSel(districts, r.school.district) && inSel(sponsors, sponsorOf(r.school))
+  ), [rows, q, reasons, types, districts, sponsors])
   useEffect(() => setPage(1), [filtered])
 
   const o = useMemo(() => ({
     types: sortTypes([...new Set(rows.map(r => r.school.type))]),
     districts: [...new Set(rows.map(r => r.school.district))].sort((a, b) => a.localeCompare(b, 'zh-HK')),
+    cS: countBy(rows, r => sponsorOf(r.school)),
     cR: countBy(rows, r => r.reason), cT: countBy(rows, r => r.school.type), cD: countBy(rows, r => r.school.district),
   }), [rows])
+  const sponsorOpts = useMemo(() => Object.keys(o.cS).sort((a, b) => (a === NO_SPONSOR ? 1 : 0) - (b === NO_SPONSOR ? 1 : 0) || o.cS[b] - o.cS[a] || a.localeCompare(b, 'zh-HK')), [o])
   const tone = (k: string) => REASONS.find(x => x.key === k)?.tone || 'slate'
 
   return (
@@ -50,11 +55,12 @@ export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
         </div>
       </Card>
       <Card className="p-4">
-        <SearchBox value={q} onChange={setQ} placeholder="搜尋學校名稱、地區、地址、網址…" />
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+        <SearchBox value={q} onChange={setQ} placeholder="搜尋學校名稱、辦學團體、地區、地址、網址…" />
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
           <MultiSelect label="原因" options={REASONS.map(r => r.key).filter(k => o.cR[k])} value={reasons} onChange={setReasons} counts={o.cR} />
           <MultiSelect label="學校種類" options={o.types} value={types} onChange={setTypes} counts={o.cT} />
           <MultiSelect label="地區" options={o.districts} value={districts} onChange={setDistricts} counts={o.cD} />
+          <MultiSelect label="辦學團體" options={sponsorOpts} value={sponsors} onChange={setSponsors} counts={o.cS} />
         </div>
         <div className="mt-3 text-right text-sm text-slate-500">找到 <b className="text-slate-900">{filtered.length}</b> 間學校</div>
       </Card>
@@ -64,6 +70,7 @@ export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
             <li key={r.school.id} className="p-4">
               <div className="font-semibold text-slate-900">{r.school.name}</div>
               <div className="text-xs text-slate-400">{r.school.name_en}</div>
+              {r.school.sponsor && <div className="mt-1 text-xs text-slate-600">辦學團體：{r.school.sponsor}{r.school.sponsor_src === '按校名推斷' && <span className="text-slate-400">（按校名推斷）</span>}</div>}
               <div className="mt-1.5 flex flex-wrap gap-1"><Badge tone={tone(r.reason)}>{r.reason}</Badge><Badge>{r.school.type}</Badge><Badge>{r.school.district}</Badge>
                 {r.site?.last_ok && <Badge tone="green">曾成功讀取</Badge>}</div>
               {r.site?.error && <div className="mt-1 break-all text-xs text-slate-400">{r.site.error}</div>}
@@ -79,12 +86,13 @@ export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
         <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100 text-left text-xs font-semibold text-slate-600">
-              <tr><th className="px-3 py-2.5">學校</th><th className="px-3 py-2.5">類型／地區</th><th className="px-3 py-2.5">無法監測原因</th><th className="px-3 py-2.5">學校網站</th><th className="px-3 py-2.5">最近檢查</th><th className="px-3 py-2.5">曾成功讀取</th></tr>
+              <tr><th className="px-3 py-2.5">學校</th><th className="px-3 py-2.5">辦學團體</th><th className="px-3 py-2.5">類型／地區</th><th className="px-3 py-2.5">無法監測原因</th><th className="px-3 py-2.5">學校網站</th><th className="px-3 py-2.5">最近檢查</th><th className="px-3 py-2.5">曾成功讀取</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.slice((page - 1) * PAGE, page * PAGE).map(r => (
                 <tr key={r.school.id} className="align-top hover:bg-slate-50">
                   <td className="min-w-[12rem] px-3 py-3"><div className="font-medium text-slate-900">{r.school.name}</div><div className="text-xs text-slate-400">{r.school.name_en}</div></td>
+                  <td className="min-w-[8rem] px-3 py-3 text-xs text-slate-700">{r.school.sponsor || <span className="text-slate-300">—</span>}{r.school.sponsor_src === '按校名推斷' && <div className="text-slate-400">按校名推斷</div>}</td>
                   <td className="px-3 py-3"><div className="flex flex-wrap gap-1"><Badge>{r.school.type}</Badge><Badge>{r.school.district}</Badge></div></td>
                   <td className="whitespace-nowrap px-3 py-3"><Badge tone={tone(r.reason)}>{r.reason}</Badge>{r.site?.error && <div className="mt-1 max-w-[14rem] truncate text-xs text-slate-400" title={r.site.error}>{r.site.error}</div>}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs"><ExtLink href={r.school.website || undefined}>{r.school.website ? host(r.school.website) : ''}</ExtLink>{r.school.phone && <div className="mt-1 text-slate-500">☎ {r.school.phone}</div>}</td>
@@ -92,7 +100,7 @@ export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
                   <td className="whitespace-nowrap px-3 py-3 text-xs">{r.site?.last_ok ? <Badge tone="green">是</Badge> : <Badge>否</Badge>}</td>
                 </tr>
               ))}
-              {!filtered.length && <tr><td colSpan={6} className="px-3 py-12 text-center text-slate-400">沒有符合條件的學校</td></tr>}
+              {!filtered.length && <tr><td colSpan={7} className="px-3 py-12 text-center text-slate-400">沒有符合條件的學校</td></tr>}
             </tbody>
           </table>
         </div>

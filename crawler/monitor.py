@@ -42,8 +42,12 @@ def load_edb():
         print('EDB download failed, using cached list:', e)
     return json.load(open(p))
 
+def save_sponsors(d): json.dump(d, open(os.path.join(HERE, 'sponsors.json'), 'w'), ensure_ascii=False, indent=0)
+
 def build_schools(edb):
     found = load('found_sites.json', {})
+    sp_path = os.path.join(HERE, 'sponsors.json')
+    sponsors = json.load(open(sp_path)) if os.path.exists(sp_path) else {}
     out = {}
     for x in edb:
         sid = str(x['SCHOOL NO.'])
@@ -54,7 +58,8 @@ def build_schools(edb):
                     'finance': x['資助種類'], 'district': x['分區'], 'address': x['中文地址'],
                     'phone': x['聯絡電話'] if x['聯絡電話'] != 'N.A.' else '', 'website': site}
         if found.get(sid, {}).get('url'):
-            out[sid].update(website=found[sid]['url'], website_src='Gemini', website_edb=site)
+            out[sid].update(website=found[sid]['url'], website_src=found[sid].get('src', 'Gemini'), website_edb=site)
+        out[sid].update(sponsors.get(sid, {}))
     return sorted(out.values(), key=lambda s: s['id'])
 
 def is_named(i):

@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'daily = 只檢查監測中網站；full = 全面重新掃描；discover = Gemini 複查未找到招標頁的學校；find_sites = Gemini 搜尋沒有網址的學校'
+        description: 'daily = 只檢查監測中網站；full = 全面重新掃描；discover = Gemini 複查未找到招標頁的學校；find_sites = Gemini 搜尋沒有網址的學校；official_sites = 按教育局幼稚園／中小學概覽更新學校網址'
         default: daily
         type: choice
-        options: [daily, full, discover, find_sites]
+        options: [daily, full, discover, find_sites, official_sites]
 
 permissions:
   contents: write
@@ -49,7 +49,9 @@ jobs:
           case "$MODE" in
             discover) python crawler/discover.py ;;
             find_sites) python crawler/find_sites.py ;;
-            *) python crawler/monitor.py "$MODE"
+            official_sites) python crawler/official_sites.py && python crawler/monitor.py daily ;;
+            *) if [ "$MODE" = full ]; then python crawler/official_sites.py || echo "::warning::official_sites failed"; fi
+               python crawler/monitor.py "$MODE"
                # use the rest of the free Gemini quota on the backlog
                python crawler/discover.py || echo "::warning::discover failed"
                python crawler/find_sites.py || echo "::warning::find_sites failed" ;;
