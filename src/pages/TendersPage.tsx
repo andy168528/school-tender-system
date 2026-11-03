@@ -69,10 +69,11 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     const name = (r: TenderRow) => r.school?.name || r.site
     if (sort === '最新公告優先') out.sort((a, b) => Number(b.isNew) - Number(a.isNew) || b.date.localeCompare(a.date) || b.first_seen.localeCompare(a.first_seen))
     else if (sort === '截標日期（緊急先）') out.sort((a, b) => {
-      // 未截標: fewest days left first; then 已截標: most recently closed first; no deadline last
-      const g = (r: TenderRow) => r.status === '未截標' ? 0 : r.deadline ? 1 : 2
+      // no deadline but posted within 3 months → 未截標 (fewest days left first) → older no-deadline → 已截標 (most recently closed first)
+      const recent = addDays(today, -90)
+      const g = (r: TenderRow) => r.status === '未截標' ? 1 : r.deadline ? 3 : r.date >= recent ? 0 : 2
       return g(a) - g(b)
-        || (g(a) === 0 ? a.deadline!.localeCompare(b.deadline!) : g(a) === 1 ? b.deadline!.localeCompare(a.deadline!) : 0)
+        || (g(a) === 1 ? a.deadline!.localeCompare(b.deadline!) : g(a) === 3 ? b.deadline!.localeCompare(a.deadline!) : 0)
         || b.date.localeCompare(a.date)
     })
     else out.sort((a, b) => name(a).localeCompare(name(b), 'zh-HK'))
