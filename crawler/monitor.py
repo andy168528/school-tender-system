@@ -315,7 +315,7 @@ def main():
     if backup_run is not None and PRUNE_FAILED:
         backup_run['sys'] = backup_run.get('sys', 0) + len(PRUNE_FAILED)
         backup_run['sys_msg'] = '；'.join(filter(None, [backup_run.get('sys_msg'), f'刪除 {len(PRUNE_FAILED)} 個 R2 舊檔失敗']))
-    elif os.environ.get('GITHUB_ACTIONS'):
+    if backup_run is None and os.environ.get('GITHUB_ACTIONS'):
         backup_run = {'tried': 0, 'ok': 0, 'dead': 0, 'school': 0, 'sys': 1, 'sys_msg': 'GitHub 未設定 Cloudflare R2 鑰匙'}
     counts = {}
     for t in tenders.values(): counts[t['site']] = counts.get(t['site'], 0) + 1
