@@ -1,4 +1,4 @@
-import type { Data, Meta, School, Site, Tender, TenderRow, DeadlineStatus } from './types'
+import type { Data, Meta, School, Site, SponsorSite, Tender, TenderRow, DeadlineStatus } from './types'
 import { NON_ENG, todayHK, addDays, diffDays } from './util'
 
 const BASES = [import.meta.env.VITE_DATA_BASE as string | undefined, '/data/'].filter(Boolean) as string[]
@@ -16,11 +16,12 @@ async function getJSON<T>(name: string): Promise<T> {
 }
 
 export async function loadData(): Promise<Data> {
-  const [schools, sites, tenders, meta] = await Promise.all([
+  const [schools, sites, tenders, meta, sponsorSites] = await Promise.all([
     getJSON<School[]>('schools.json'), getJSON<Site[]>('sites.json'),
     getJSON<Tender[]>('tenders.json'), getJSON<Meta>('meta.json'),
+    getJSON<Record<string, SponsorSite>>('sponsor_sites.json').catch(() => ({})),
   ])
-  return { schools, sites, tenders, meta }
+  return { schools, sites, tenders, meta, sponsorSites }
 }
 
 export function schoolsBySite(schools: School[]): Map<string, School[]> {
@@ -29,10 +30,10 @@ export function schoolsBySite(schools: School[]): Map<string, School[]> {
   return m
 }
 
-export function buildRows(tenders: Tender[], bySite: Map<string, School[]>): TenderRow[] {
+export function buildRows(tenders: Tender[], bySite: Map<string, School[]>, byId: Map<string, School>): TenderRow[] {
   const today = todayHK()
   return tenders.map(t => {
-    const schools = bySite.get(t.site) || []
+    const schools = t.sponsor ? (t.school_ids || []).map(id => byId.get(id)).filter((s): s is School => !!s) : bySite.get(t.site) || []
     const date = t.published || t.deadline || (t.baseline ? '' : t.first_seen)
     let status: DeadlineStatus; let daysLeft: number | undefined
     if (t.deadline) {

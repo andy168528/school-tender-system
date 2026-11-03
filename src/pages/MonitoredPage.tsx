@@ -5,11 +5,12 @@ import { Badge, Card, ExtLink, Pager, SearchBox } from '../components/ui'
 import { countBy, fmtTime, host, inSel, matches, sortTypes } from '../util'
 
 export interface MonRow { school: School; site: Site; engCount: number; total: number }
+export interface SponsorRow { sponsor: string; site: Site; schools: number; engCount: number; total: number }
 const CONF = ['高', '中', '低']
 const CONF_TXT: Record<string, string> = { 高: '高・有招標專頁', 中: '中・公告混在其他頁', 低: '低・只見招標字眼' }
 const PAGE = 50
 
-export default function MonitoredPage({ rows }: { rows: MonRow[] }) {
+export default function MonitoredPage({ rows, sponsors }: { rows: MonRow[]; sponsors: SponsorRow[] }) {
   const [q, setQ] = useState('')
   const [types, setTypes] = useState<string[]>([])
   const [districts, setDistricts] = useState<string[]>([])
@@ -34,6 +35,19 @@ export default function MonitoredPage({ rows }: { rows: MonRow[] }) {
 
   return (
     <div className="space-y-4">
+      {sponsors.length > 0 && <Card className="p-4">
+        <h2 className="font-semibold text-slate-900">辦學團體集中招標（{sponsors.length} 個團體）</h2>
+        <p className="mb-3 mt-1 text-sm text-slate-600">不少屬校的工程由辦學團體統一招標。系統每日亦會檢查以下團體的招標頁，公告會在「招標公告」頁以「辦學團體招標」顯示。</p>
+        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {[...sponsors].sort((a, b) => b.schools - a.schools).map(r => (
+            <li key={r.site.site} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+              <div className="font-medium text-slate-900">{r.sponsor}</div>
+              <div className="mt-0.5 text-xs text-slate-500">屬校 {r.schools} 間・公告 <b className="text-slate-700">{r.engCount}</b> 工程 ／ {r.total} 全部・最近檢查 {fmtTime(r.site.last_checked)}</div>
+              <div className="mt-1 text-xs"><ExtLink href={r.site.monitor_url || r.site.site}>{r.site.monitor_label || '招標頁'}</ExtLink></div>
+            </li>
+          ))}
+        </ul>
+      </Card>}
       <Card className="p-4">
         <p className="mb-3 text-sm text-slate-600">以下學校的網站找到招標／報價位置，系統每日香港時間上午 8:00 開始自動檢查一次，發現新公告會加入「招標公告」頁。</p>
         <SearchBox value={q} onChange={setQ} placeholder="搜尋學校名稱、地區、地址、網址…" />

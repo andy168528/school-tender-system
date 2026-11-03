@@ -9,6 +9,8 @@ const ENG_ORDER = ['樓宇維修保養', '機電工程 (E&M)', '水電維修', '
 const DATE_OPTS = ['全部日期', '近 7 日', '近 30 日', '近 90 日', '近 1 年'] as const
 const NEW_OPTS = ['全部', '今日新增', '近 7 日新增'] as const
 const SORT_OPTS = ['截標日期（緊急先）', '最新公告優先', '學校名稱'] as const
+const SOURCES = ['學校網站', '辦學團體']
+const srcOf = (r: TenderRow) => r.sponsor ? '辦學團體' : '學校網站'
 const pubText = (r: TenderRow) => r.published && r.published_src === '網址' ? `約 ${r.published.slice(0, 7)}` : r.published
 const PAGE = 50
 
@@ -17,6 +19,16 @@ function statusBadge(r: TenderRow) {
   if (r.status === '已截標') return <Badge tone="slate">已截標</Badge>
   if (r.status === '可能已截標') return <Badge tone="amber">可能已截標</Badge>
   return <Badge tone="blue">截標日期不明</Badge>
+}
+
+function Who({ r, small }: { r: TenderRow; small?: boolean }) {
+  if (!r.sponsor) return <>{r.school?.name || r.site}
+    {r.schools.length > 1 && (small ? <span className="ml-1 text-xs font-normal text-slate-500">＋同網站另 {r.schools.length - 1} 間</span>
+      : <div className="text-xs font-normal text-slate-500" title={r.schools.map(s => s.name).join('\n')}>＋同網站另 {r.schools.length - 1} 間學校</div>)}</>
+  return <>
+    <span className="mr-1">{r.sponsor}</span><Badge tone="brand">辦學團體招標</Badge>
+    <div className="mt-0.5 text-xs font-normal text-slate-500">{r.schools.length ? `屬校：${r.schools.map(s => s.name).join('、')}` : '未能從標題辨認是哪間屬校，請打開公告查看'}</div>
+  </>
 }
 
 function needsManual(r: TenderRow) {
@@ -42,6 +54,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
   const [eng, setEng] = useState<string[]>([])
   const [status, setStatus] = useState<string[]>([])
   const [finance, setFinance] = useState<string[]>([])
+  const [sources, setSources] = useState<string[]>([])
   const [dateOpt, setDateOpt] = useState<typeof DATE_OPTS[number]>('全部日期')
   const [newOpt, setNewOpt] = useState<typeof NEW_OPTS[number]>('全部')
   const [sort, setSort] = useState<typeof SORT_OPTS[number]>('截標日期（緊急先）')
@@ -58,15 +71,15 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     const from = { '全部日期': '', '近 7 日': addDays(today, -7), '近 30 日': addDays(today, -30), '近 90 日': addDays(today, -90), '近 1 年': addDays(today, -365) }[dateOpt]
     const out = base.filter(r => {
       const ss = r.schools
-      return matches(q, r.title, r.ai?.summary || '', r.url, r.site, ...ss.flatMap(s => [s.name, s.name_en, s.district, s.address]))
+      return matches(q, r.title, r.ai?.summary || '', r.url, r.site, r.sponsor || '', ...ss.flatMap(s => [s.name, s.name_en, s.district, s.address]))
         && inSel(types, ss.map(s => s.type)) && inSel(districts, ss.map(s => s.district)) && inSel(finance, ss.map(s => s.finance))
-        && inSel(eng, r.types) && inSel(status, r.status)
+        && inSel(eng, r.types) && inSel(status, r.status) && inSel(sources, srcOf(r))
         && (!from || r.date >= from)
         && (newOpt === '全部' || (newOpt === '今日新增' ? r.isToday : r.isNew))
         && (!pdfOnly || r.doc)
         && (!needFix || needsManual(r))
     })
-    const name = (r: TenderRow) => r.school?.name || r.site
+    const name = (r: TenderRow) => r.sponsor || r.school?.name || r.site
     if (sort === '最新公告優先') out.sort((a, b) => Number(b.isNew) - Number(a.isNew) || b.date.localeCompare(a.date) || b.first_seen.localeCompare(a.first_seen))
     else if (sort === '截標日期（緊急先）') out.sort((a, b) => {
       // no deadline but posted within 3 months → 未截標 (fewest days left first) → older no-deadline → 已截標 (most recently closed first)
@@ -78,7 +91,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     })
     else out.sort((a, b) => name(a).localeCompare(name(b), 'zh-HK'))
     return out
-  }, [base, q, types, districts, finance, eng, status, dateOpt, newOpt, sort, pdfOnly, needFix, today])
+  }, [base, q, types, districts, finance, eng, status, sources, dateOpt, newOpt, sort, pdfOnly, needFix, today])
 
   useEffect(() => setPage(1), [filtered])
 
@@ -90,21 +103,21 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     cType: countBy(base, r => [...new Set(r.schools.map(s => s.type))]),
     cDist: countBy(base, r => [...new Set(r.schools.map(s => s.district))]),
     cFin: countBy(base, r => [...new Set(r.schools.map(s => s.finance))]),
-    cEng: countBy(base, r => r.types), cStatus: countBy(base, r => r.status),
+    cEng: countBy(base, r => r.types), cStatus: countBy(base, r => r.status), cSrc: countBy(base, srcOf),
   }), [base])
 
   const engRows = rows.filter(r => r.active && r.eng_types.length)
   const openEng = engRows.filter(r => r.status === '未截標').length
   const newWeek = rows.filter(r => r.isNew && r.eng_types.length).length
   const lastRun = meta.runs[0]
-  const anyFilter = q || types.length || districts.length || eng.length || status.length || finance.length || dateOpt !== '全部日期' || newOpt !== '全部' || pdfOnly || needFix
-  const nFilter = types.length + districts.length + eng.length + status.length + finance.length + Number(dateOpt !== '全部日期') + Number(newOpt !== '全部') + Number(pdfOnly) + Number(needFix) + Number(showGone)
-  const reset = () => { setQ(''); setTypes([]); setDistricts([]); setEng([]); setStatus([]); setFinance([]); setDateOpt('全部日期'); setNewOpt('全部'); setPdfOnly(false); setNeedFix(false) }
+  const anyFilter = q || types.length || districts.length || eng.length || status.length || finance.length || sources.length || dateOpt !== '全部日期' || newOpt !== '全部' || pdfOnly || needFix
+  const nFilter = types.length + districts.length + eng.length + status.length + finance.length + sources.length + Number(dateOpt !== '全部日期') + Number(newOpt !== '全部') + Number(pdfOnly) + Number(needFix) + Number(showGone)
+  const reset = () => { setQ(''); setTypes([]); setDistricts([]); setEng([]); setStatus([]); setFinance([]); setSources([]); setDateOpt('全部日期'); setNewOpt('全部'); setPdfOnly(false); setNeedFix(false) }
   const pageRows = filtered.slice((page - 1) * PAGE, page * PAGE)
 
   const exportCSV = () => downloadCSV(`學校工程招標_${today}.csv`,
-    ['學校', '學校類型', '地區', '公告標題', '工程種類', '公告日期', '截標日期', '截標狀態', '公告連結', '招標頁', '首次發現'],
-    filtered.map(r => [r.schools.map(s => s.name).join(' / '), r.school?.type || '', r.school?.district || '', r.title, r.types.join('、'),
+    ['學校／辦學團體', '學校類型', '地區', '公告標題', '工程種類', '公告日期', '截標日期', '截標狀態', '公告連結', '招標頁', '首次發現'],
+    filtered.map(r => [[r.sponsor, ...r.schools.map(s => s.name)].filter(Boolean).join(' / '), r.school?.type || '', r.school?.district || '', r.title, r.types.join('、'),
       r.published || '', r.deadline || '', r.status, r.url, r.page, r.baseline ? '首次掃描' : r.first_seen]))
 
   const bk = lastRun?.backup
@@ -124,7 +137,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
 
       <Card className="p-4">
         <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-          <SearchBox value={q} onChange={setQ} placeholder="搜尋學校名稱、公告標題、地區、地址、網址… (可輸入多個字詞，以空格分隔)" />
+          <SearchBox value={q} onChange={setQ} placeholder="搜尋學校名稱、辦學團體、公告標題、地區、地址、網址… (可輸入多個字詞，以空格分隔)" />
           <div className="flex items-center gap-2">
             <button onClick={() => setShowFilters(!showFilters)}
               className={`flex-1 rounded-lg border px-3 py-2 text-sm md:hidden ${nFilter ? 'border-brand text-brand' : 'border-slate-300 text-slate-700'}`}>
@@ -133,12 +146,13 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
             <button onClick={exportCSV} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:border-brand hover:text-brand">匯出 Excel (CSV)</button>
           </div>
         </div>
-        <div className={`mt-3 grid-cols-2 gap-3 md:grid md:grid-cols-4 xl:grid-cols-8 ${showFilters ? 'grid' : 'hidden'}`}>
+        <div className={`mt-3 grid-cols-2 gap-3 md:grid md:grid-cols-5 xl:grid-cols-9 ${showFilters ? 'grid' : 'hidden'}`}>
           <MultiSelect label="學校種類" options={opts.types} value={types} onChange={setTypes} counts={opts.cType} />
           <MultiSelect label="地區" options={opts.districts} value={districts} onChange={setDistricts} counts={opts.cDist} />
           <MultiSelect label="工程種類" options={opts.eng} value={eng} onChange={setEng} counts={opts.cEng} />
           <MultiSelect label="截標狀態" options={STATUSES} value={status} onChange={setStatus} counts={opts.cStatus} />
           <MultiSelect label="資助種類" options={opts.finance} value={finance} onChange={setFinance} counts={opts.cFin} />
+          <MultiSelect label="公告來源" options={SOURCES} value={sources} onChange={setSources} counts={opts.cSrc} />
           <Segmented label="公告日期" options={[...DATE_OPTS]} value={dateOpt} onChange={setDateOpt} />
           <Segmented label="新公告" options={[...NEW_OPTS]} value={newOpt} onChange={setNewOpt} />
           <Segmented label="排序" options={[...SORT_OPTS]} value={sort} onChange={setSort} />
@@ -164,9 +178,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                 {!r.active && <Badge>已下架</Badge>}
               </div>
               <ExtLink href={r.url} className="mt-2 block text-[15px] font-semibold leading-snug">{r.title}</ExtLink>
-              <div className="mt-1.5 text-sm font-medium text-slate-800">{r.school?.name || r.site}
-                {r.schools.length > 1 && <span className="ml-1 text-xs font-normal text-slate-500">＋同網站另 {r.schools.length - 1} 間</span>}
-              </div>
+              <div className="mt-1.5 text-sm font-medium text-slate-800"><Who r={r} small /></div>
               <div className="mt-1.5 flex flex-wrap gap-1">
                 {r.school && <Badge>{r.school.type}</Badge>}
                 {r.school && <Badge>{r.school.district}</Badge>}
@@ -182,7 +194,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                 <ExtLink href={r.url}>{r.doc ? '📄 PDF／附件' : '🔗 公告'}</ExtLink>
                 {r.backup && <ExtLink href={'/api/pdf?key=' + encodeURIComponent(r.backup)}>💾 備份副本</ExtLink>}
                 <ExtLink href={r.page}>招標頁</ExtLink>
-                <ExtLink href={r.site}>學校網站</ExtLink>
+                <ExtLink href={r.site}>{r.sponsor ? '辦學團體網站' : '學校網站'}</ExtLink>
               </div>
               {!r.backup && r.backup_state && <div className="mt-1.5">{backupBadge(r)}</div>}
             </li>
@@ -217,8 +229,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                     <div className="mt-1 text-xs text-slate-400">{r.baseline ? '首次掃描已存在' : `發現於 ${r.first_seen}`}</div>
                   </td>
                   <td className="min-w-[12rem] px-3 py-3">
-                    <div className="font-medium text-slate-900">{r.school?.name || r.site}</div>
-                    {r.schools.length > 1 && <div className="text-xs text-slate-500" title={r.schools.map(s => s.name).join('\n')}>＋同網站另 {r.schools.length - 1} 間學校</div>}
+                    <div className="font-medium text-slate-900"><Who r={r} /></div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {r.school && <Badge>{r.school.type}</Badge>}
                       {r.school && <Badge>{r.school.district}</Badge>}
@@ -240,7 +251,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                       {r.backup && <ExtLink href={'/api/pdf?key=' + encodeURIComponent(r.backup)}>💾 備份副本</ExtLink>}
                       {backupBadge(r)}
                       <ExtLink href={r.page}>招標頁</ExtLink>
-                      <ExtLink href={r.site}>學校網站</ExtLink>
+                      <ExtLink href={r.site}>{r.sponsor ? '辦學團體網站' : '學校網站'}</ExtLink>
                     </div>
                   </td>
                 </tr>

@@ -1,0 +1,522 @@
+{
+ "保良局": {
+  "schools": 152,
+  "home": "https://www.poleungkuk.org.hk",
+  "hint": "https://www.poleungkuk.org.hk/about-us/tender-notice",
+  "checked": "2026-11-03",
+  "url": "https://www.poleungkuk.org.hk/about-us/tender-notice",
+  "reason": ""
+ },
+ "東華三院": {
+  "schools": 108,
+  "home": "https://www.tungwah.org.hk",
+  "hint": "https://www.tungwah.org.hk/about/%e6%8b%9b%e6%a8%99%e5%85%ac%e5%91%8a/",
+  "checked": "2026-11-03",
+  "url": "https://www.tungwah.org.hk/about/%e6%8b%9b%e6%a8%99%e5%85%ac%e5%91%8a/",
+  "reason": ""
+ },
+ "天主教香港教區": {
+  "schools": 94,
+  "home": "https://www.catholic.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "救世軍": {
+  "schools": 55,
+  "home": "https://www.salvationarmy.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "基督教香港信義會": {
+  "schools": 48,
+  "home": "https://www.elchk.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "中華基督教會香港區會": {
+  "schools": 44,
+  "home": "https://www.hkcccc.org/",
+  "hint": "https://www.hkcccc.org/%e6%8b%9b%e6%a8%99%e5%95%9f%e4%ba%8b/",
+  "checked": "2026-11-03",
+  "url": "https://www.hkcccc.org/job-tender/",
+  "reason": ""
+ },
+ "聖公宗（香港）小學監理委員會有限公司": {
+  "schools": 44,
+  "home": "https://hkskheducation.org",
+  "hint": "https://hkskheducation.org/index.php?route=information/information&information_id=9",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港明愛": {
+  "schools": 38,
+  "home": "https://www.caritas.org.hk/",
+  "hint": "https://www.caritas.org.hk/zh/news/tender_notice",
+  "checked": "2026-11-03",
+  "url": "https://www.caritas.org.hk/zh/news/tender_notice",
+  "reason": ""
+ },
+ "九龍樂善堂": {
+  "schools": 32,
+  "home": "https://www.loksintong.org/",
+  "hint": "https://www.loksintong.org/tender-notice",
+  "checked": "2026-11-03",
+  "url": "https://www.loksintong.org/tender-notice",
+  "reason": ""
+ },
+ "基督教宣道會香港區聯會有限公司": {
+  "schools": 28,
+  "home": "https://cmacuhk.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港九龍塘基督教中華宣道會": {
+  "schools": 27,
+  "home": "https://www.ktac.org",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "仁濟醫院": {
+  "schools": 27,
+  "home": "https://www.yanchai.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "嗇色園": {
+  "schools": 24,
+  "home": "https://www.siksikyuen.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港道教聯合會": {
+  "schools": 24,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "聖公宗（香港）中學委員會有限公司": {
+  "schools": 23,
+  "home": "https://hkskheducation.org",
+  "hint": "https://hkskheducation.org/tender.php",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港浸信會聯會": {
+  "schools": 22,
+  "home": "https://www.hkbaptist.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "嘉諾撒仁愛女修會": {
+  "schools": 21,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "順德聯誼總會": {
+  "schools": 20,
+  "home": "http://stfa.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香海正覺蓮社": {
+  "schools": 18,
+  "home": "https://buddhist-hkckla.org/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港路德會有限公司": {
+  "schools": 17,
+  "home": "https://www.lutheran.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港佛教聯合會": {
+  "schools": 16,
+  "home": "https://www.hkbuddhist.org/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "耶穌寶血女修會": {
+  "schools": 13,
+  "home": "https://spb.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港基督教循道衞理聯合教會": {
+  "schools": 12,
+  "home": "https://www.methodist.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港中文大學校友會聯會教育基金會有限公司": {
+  "schools": 11,
+  "home": "https://www.cuhkfaaef.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "鮑思高慈幼會": {
+  "schools": 11,
+  "home": "https://www.sdb.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港五邑工商總會": {
+  "schools": 9,
+  "home": "https://fdbwa.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港蘇浙滬同鄉會": {
+  "schools": 9,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "香港真光中學校董會": {
+  "schools": 8,
+  "home": "https://www.tlmshk.edu.hk",
+  "hint": "https://www.tlmshk.edu.hk/recruitment-and-tender/",
+  "checked": "2026-11-03",
+  "url": "https://www.tlmshk.edu.hk/recruitment-and-tender/",
+  "reason": ""
+ },
+ "沙爾德聖保祿女修會": {
+  "schools": 8,
+  "home": "http://www.srspc.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "基督教香港崇真會": {
+  "schools": 8,
+  "home": "https://www.ttm.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "鳳溪公立學校": {
+  "schools": 7,
+  "home": "http://www.fungkai.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "港澳信義會有限公司": {
+  "schools": 7,
+  "home": "https://hkmlc.org/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "中華回教博愛社": {
+  "schools": 6,
+  "home": "https://www.cmcfa.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "世界龍岡學校（香港）有限公司": {
+  "schools": 6,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "基督教興學會有限公司": {
+  "schools": 6,
+  "home": "http://www.esdi.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港天主教方濟會會長": {
+  "schools": 5,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "元朗公立中學校友會": {
+  "schools": 5,
+  "home": "https://sites.google.com/view/ylpmsaa",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "地利亞教育機構": {
+  "schools": 5,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "青松觀有限公司": {
+  "schools": 4,
+  "home": "https://www.daoist.org",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "博愛醫院歷屆總理聯誼會有限公司": {
+  "schools": 4,
+  "home": "https://www.pohfdirectors.org/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "基督教九龍五旬節會有限公司": {
+  "schools": 4,
+  "home": "https://www.kpc-main.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港神託會": {
+  "schools": 4,
+  "home": "https://www.stewards.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "伊利沙伯中學舊生會教育推廣機構有限公司": {
+  "schools": 4,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "香港喇沙修士會": {
+  "schools": 4,
+  "home": "https://www.lasalle.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "博愛醫院": {
+  "schools": 4,
+  "home": "https://pokoi.org.hk",
+  "hint": "https://tender.pokoi.org.hk/",
+  "checked": "2026-11-03",
+  "url": "https://tender.pokoi.org.hk/?lang=zh",
+  "reason": ""
+ },
+ "香港中國婦女會": {
+  "schools": 4,
+  "home": "https://www.hkcwc.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "無玷聖母獻主會": {
+  "schools": 4,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "東蓮覺苑": {
+  "schools": 3,
+  "home": "https://www.tlky.org/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "基督教中華傳道會 ﹝香港﹞有限公司": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "聖母聖心會": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "九龍真光中學": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "聖母無原罪傳教女修會": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "中華基督教禮賢會香港區會": {
+  "schools": 3,
+  "home": "https://www.rhenish.org/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "嶺南教育機構有限公司": {
+  "schools": 3,
+  "home": "https://www.lingnan.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港中華基督教青年會": {
+  "schools": 3,
+  "home": "https://ymca.org.hk/",
+  "hint": "https://ymca.org.hk/%e6%8b%9b%e6%a8%99%e9%a0%85%e7%9b%ae/",
+  "checked": "2026-11-03",
+  "url": "https://ymca.org.hk/zh-hans/%e5%85%b3%e4%ba%8e%e6%9c%ac%e4%bc%9a/%e6%8b%9b%e6%a8%99%e9%a0%85%e7%9b%ae/",
+  "reason": ""
+ },
+ "民生書院（辦學團體）有限公司": {
+  "schools": 3,
+  "home": "https://www.munsang.edu.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "竹園區神召會": {
+  "schools": 3,
+  "home": "https://www.pchk.org.hk/",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "裘錦秋書院有限公司": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "香港特別行政區政府": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "香港基督教循道衛理聯合教會": {
+  "schools": 3,
+  "home": "https://www.methodist.org.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香島教育機構有限公司": {
+  "schools": 3,
+  "home": "https://www.heungto.hk/",
+  "hint": "https://www.heungto.hk/index.php/latest-news",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "聖依納爵教育機構有限公司": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "培僑教育機構有限公司": {
+  "schools": 3,
+  "home": "https://puikiu.hk",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ },
+ "香港福建商會教育基金有限公司": {
+  "schools": 3,
+  "home": "",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "找不到網站"
+ },
+ "基督教靈糧世界佈道會香港靈糧堂堂務委員會": {
+  "schools": 3,
+  "home": "https://www.hkllc.org",
+  "hint": "",
+  "checked": "2026-11-03",
+  "url": "",
+  "reason": "未找到招標頁"
+ }
+}
