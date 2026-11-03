@@ -16,7 +16,7 @@ const PAGE = 50
 const NO_SPONSOR = '未有資料'
 const sponsorOf = (s: School) => s.sponsor || NO_SPONSOR
 
-export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
+export default function UnmonitoredPage({ rows, watchedSponsors }: { rows: UnRow[]; watchedSponsors: Set<string> }) {
   const [q, setQ] = useState('')
   const [reasons, setReasons] = useState<string[]>([])
   const [types, setTypes] = useState<string[]>([])
@@ -70,7 +70,7 @@ export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
             <li key={r.school.id} className="p-4">
               <div className="font-semibold text-slate-900">{r.school.name}</div>
               <div className="text-xs text-slate-400">{r.school.name_en}</div>
-              {r.school.sponsor && <div className="mt-1 text-xs text-slate-600">辦學團體：{r.school.sponsor}{r.school.sponsor_src === '按校名推斷' && <span className="text-slate-400">（按校名推斷）</span>}</div>}
+              {r.school.sponsor && <div className="mt-1 text-xs text-slate-600">辦學團體：{r.school.sponsor}{r.school.sponsor_src === '按校名推斷' && <span className="text-slate-400">（按校名推斷）</span>}{watchedSponsors.has(r.school.sponsor) && <span className="ml-1 text-green-700">・團體招標頁監測中</span>}</div>}
               <div className="mt-1.5 flex flex-wrap gap-1"><Badge tone={tone(r.reason)}>{r.reason}</Badge><Badge>{r.school.type}</Badge><Badge>{r.school.district}</Badge>
                 {r.site?.last_ok && <Badge tone="green">曾成功讀取</Badge>}</div>
               {r.site?.error && <div className="mt-1 break-all text-xs text-slate-400">{r.site.error}</div>}
@@ -92,7 +92,7 @@ export default function UnmonitoredPage({ rows }: { rows: UnRow[] }) {
               {filtered.slice((page - 1) * PAGE, page * PAGE).map(r => (
                 <tr key={r.school.id} className="align-top hover:bg-slate-50">
                   <td className="min-w-[12rem] px-3 py-3"><div className="font-medium text-slate-900">{r.school.name}</div><div className="text-xs text-slate-400">{r.school.name_en}</div></td>
-                  <td className="min-w-[8rem] px-3 py-3 text-xs text-slate-700">{r.school.sponsor || <span className="text-slate-300">—</span>}{r.school.sponsor_src === '按校名推斷' && <div className="text-slate-400">按校名推斷</div>}</td>
+                  <td className="min-w-[8rem] px-3 py-3 text-xs text-slate-700">{r.school.sponsor || <span className="text-slate-300">—</span>}{r.school.sponsor_src === '按校名推斷' && <div className="text-slate-400">按校名推斷</div>}{r.school.sponsor && watchedSponsors.has(r.school.sponsor) && <div className="text-green-700">團體招標頁監測中</div>}</td>
                   <td className="px-3 py-3"><div className="flex flex-wrap gap-1"><Badge>{r.school.type}</Badge><Badge>{r.school.district}</Badge></div></td>
                   <td className="whitespace-nowrap px-3 py-3"><Badge tone={tone(r.reason)}>{r.reason}</Badge>{r.site?.error && <div className="mt-1 max-w-[14rem] truncate text-xs text-slate-400" title={r.site.error}>{r.site.error}</div>}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs"><ExtLink href={r.school.website || undefined}>{r.school.website ? host(r.school.website) : ''}</ExtLink>{r.school.phone && <div className="mt-1 text-slate-500">☎ {r.school.phone}</div>}</td>

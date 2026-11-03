@@ -62,6 +62,25 @@ def build_schools(edb):
         out[sid].update(sponsors.get(sid, {}))
     return sorted(out.values(), key=lambda s: s['id'])
 
+def sponsor_pages():
+    """{tender page url: sponsor name} for 辦學團體 whose tender page was verified (sponsor_sites.py)."""
+    return {e['url']: k for k, e in load('sponsor_sites.json', {}).items() if e.get('url')}
+
+def core_names(s):
+    n = re.sub(r'[（(\[［﹝].*?[)）\]］﹞]', '', s['name'])
+    for k in filter(None, [s.get('sponsor'), '香港', '學校', '幼稚園', '幼兒學校']):
+        if n.startswith(k) and len(n) - len(k) >= 3: n = n[len(k):]
+    en = s['name_en'].split('(')[0].strip().lower()
+    return [x for x in {s['name'], re.sub(r'[（(].*?[)）]', '', s['name']), n, en} if len(x) >= 3]
+
+SPONSOR_SCHOOLS = {}
+
+def match_schools(t, schools, doc=''):
+    """Schools of the tender's sponsor named in its title / AI summary / start of the document."""
+    text = (t['title'] + ' ' + (t.get('ai') or {}).get('summary', '') + ' ' + unquote(t['url']) + ' ' + doc[:6000]).lower()
+    hit = [s for s in schools if any(n.lower() in text for n in core_names(s))]
+    return sorted({s['id'] for s in hit})
+
 def is_named(i):
     return bool(crawl.STRONG.search(i['text']) or crawl.STRONG_URL.search(unquote(i['url'])) or i.get('menu'))
 
@@ -153,6 +172,7 @@ def extract_detail(t):
     if not t.get('published'):
         d = classify.find_published('', unquote(t['url']))
         if d and d.isoformat() <= TODAY: t['published'] = d.isoformat(); t['published_src'] = '網址'
+    if t.get('sponsor'): t['school_ids'] = match_schools(t, SPONSOR_SCHOOLS.get(t['sponsor'], []), text or '')
     t['detail_checked'] = TODAY
 
 GENERIC_TITLE = re.compile(r'^(下載|按此下載|按此|點擊下載|附件|附件連結|連結|檔案|文件|詳情|pdf|download|click here|here|more|link)$', re.I)
@@ -275,9 +295,13 @@ def main():
     tenders = {t['id']: t for t in load('tenders.json', [])}
     dropped = load('dropped.json', {})
     EXTRA.update({s['site']: s['ai_pages'] for s in sites.values() if s.get('ai_pages')})
-    all_sites = sorted({s['website'] for s in schools if s['website']})
+    sp = sponsor_pages()
+    all_sites = sorted({s['website'] for s in schools if s['website']} | set(sp))
     for s in all_sites:
         sites.setdefault(s, {'site': s, 'monitored': False, 'reason': '尚未掃描'})
+    for u, k in sp.items(): sites[u].update(sponsor=k, browser=True)
+    for s in sites.values():
+        if s.get('sponsor') and s['site'] not in sp: s.pop('sponsor')
     if mode == 'bootstrap':
         best = {}
         for fn in sys.argv[2:]:
@@ -296,6 +320,11 @@ def main():
         print(mode, 'sites to crawl:', len(todo), flush=True)
         results = run_crawl(todo, browser_sites)
     new = merge(sites, tenders, results, full, dropped)
+    by_sp = SPONSOR_SCHOOLS
+    for s in schools:
+        if s.get('sponsor'): by_sp.setdefault(s['sponsor'], []).append(s)
+    for t in tenders.values():
+        if t['site'] in sp: t['sponsor'] = sp[t['site']]
     if mode == 'bootstrap':
         for t in tenders.values(): t['baseline'] = True
     todo_detail = [t for t in tenders.values() if not t.get('detail_checked')]
@@ -305,6 +334,8 @@ def main():
     with cf.ThreadPoolExecutor(16) as ex: list(ex.map(extract_detail, todo_detail))
     prune(tenders, dropped)
     new = [t for t in new if t['id'] in tenders]
+    for t in tenders.values():
+        if t.get('sponsor') and 'school_ids' not in t: t['school_ids'] = match_schools(t, by_sp.get(t['sponsor'], []))
     backup_run = None
     if r2.enabled():
         todo_backup = [t for t in tenders.values() if t.get('doc') and t.get('active', True) and not t.get('backup')

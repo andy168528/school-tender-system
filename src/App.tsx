@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Data } from './types'
 import { buildRows, loadData, schoolsBySite } from './data'
 import TendersPage from './pages/TendersPage'
-import MonitoredPage, { type MonRow } from './pages/MonitoredPage'
+import MonitoredPage, { type MonRow, type SponsorRow } from './pages/MonitoredPage'
 import UnmonitoredPage, { type UnRow } from './pages/UnmonitoredPage'
 import AboutPage from './pages/AboutPage'
 import { fmtTime } from './util'
@@ -27,7 +27,7 @@ export default function App() {
     if (!data) return null
     const bySite = schoolsBySite(data.schools)
     const siteMap = new Map(data.sites.map(s => [s.site, s]))
-    const rows = buildRows(data.tenders, bySite)
+    const rows = buildRows(data.tenders, bySite, new Map(data.schools.map(s => [s.id, s])))
     const eng: Record<string, number> = {}, total: Record<string, number> = {}
     for (const t of data.tenders) { total[t.site] = (total[t.site] || 0) + 1; if (t.eng_types.length) eng[t.site] = (eng[t.site] || 0) + 1 }
     const mon: MonRow[] = [], un: UnRow[] = []
@@ -36,7 +36,10 @@ export default function App() {
       if (site?.monitored) mon.push({ school, site, engCount: eng[site.site] || 0, total: total[site.site] || 0 })
       else un.push({ school, site, reason: !school.website ? '名單無網址' : site?.reason || '尚未掃描' })
     }
-    return { rows, mon, un }
+    const spon: SponsorRow[] = data.sites.filter(s => s.sponsor && s.monitored).map(site => ({
+      sponsor: site.sponsor!, site, schools: data.schools.filter(s => s.sponsor === site.sponsor).length,
+      engCount: eng[site.site] || 0, total: total[site.site] || 0 }))
+    return { rows, mon, un, spon }
   }, [data])
 
   const counts = { tenders: derived?.rows.filter(r => r.active && r.eng_types.length).length, monitored: derived?.mon.length, unmonitored: derived?.un.length }
@@ -68,8 +71,8 @@ export default function App() {
         {!data && !err && <div className="py-20 text-center text-slate-400">載入資料中…</div>}
         {data && derived && (
           tab === 'tenders' ? <TendersPage rows={derived.rows} meta={data.meta} monitoredSchools={derived.mon.length} />
-            : tab === 'monitored' ? <MonitoredPage rows={derived.mon} />
-              : tab === 'unmonitored' ? <UnmonitoredPage rows={derived.un} />
+            : tab === 'monitored' ? <MonitoredPage rows={derived.mon} sponsors={derived.spon} />
+              : tab === 'unmonitored' ? <UnmonitoredPage rows={derived.un} watchedSponsors={new Set(derived.spon.map(s => s.sponsor))} />
                 : <AboutPage meta={data.meta} counts={{ schools: data.schools.length, monitored: derived.mon.length, unmonitored: derived.un.length, tenders: data.tenders.length }} />
         )}
       </main>

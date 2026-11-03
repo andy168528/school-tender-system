@@ -6,14 +6,16 @@ export interface School {
 export interface Site {
   site: string; monitored: boolean; reason?: string; monitor_url?: string; monitor_label?: string
   confidence?: string; last_checked?: string; last_ok?: string; fail?: number; error?: string
-  browser?: boolean; tender_count?: number
+  browser?: boolean; tender_count?: number; sponsor?: string
 }
+export interface SponsorSite { schools: number; home: string; url: string; reason: string; checked: string }
 export interface Tender {
   id: string; site: string; title: string; url: string; page: string; doc: boolean; eng_types: string[]
   first_seen: string; last_seen: string; miss: number; active: boolean; baseline?: boolean
   deadline?: string; deadline_src?: string; published?: string; published_src?: string; backup?: string
   backup_state?: 'ok' | 'dead' | 'school' | 'sys'; backup_error?: string; backup_tries?: number
   ai?: { tender: boolean; eng: boolean; summary: string; reason?: string }
+  sponsor?: string; school_ids?: string[]
 }
 export interface Run { at: string; mode: string; sites_checked: number; ok: number; new_tenders: number; new_eng: number; seconds: number
   backup?: { tried: number; ok: number; dead: number; school: number; sys: number; sys_msg?: string } }
@@ -24,4 +26,4 @@ export interface TenderRow extends Tender {
   schools: School[]; school?: School; status: DeadlineStatus; daysLeft?: number; date: string
   types: string[]; isNew: boolean; isToday: boolean
 }
-export interface Data { schools: School[]; sites: Site[]; tenders: Tender[]; meta: Meta }
+export interface Data { schools: School[]; sites: Site[]; tenders: Tender[]; meta: Meta; sponsorSites: Record<string, SponsorSite> }
