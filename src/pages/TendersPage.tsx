@@ -8,7 +8,7 @@ const STATUSES = ['未截標', '已截標', '可能已截標', '截標日期不�
 const ENG_ORDER = ['樓宇維修保養', '機電工程 (E&M)', '水電維修', '小型工程 (Minor Works)', '改建加建 / 裝修 (A&A)', '樓宇檢查 / 測試', '滲水 / 防水', '其他工程', NON_ENG]
 const DATE_OPTS = ['全部日期', '近 7 日', '近 30 日', '近 90 日', '近 1 年'] as const
 const NEW_OPTS = ['全部', '今日新增', '近 7 日新增'] as const
-const SORT_OPTS = ['最新公告優先', '截標日期（最近先）', '學校名稱'] as const
+const SORT_OPTS = ['截標日期（緊急先）', '最新公告優先', '學校名稱'] as const
 const pubText = (r: TenderRow) => r.published && r.published_src === '網址' ? `約 ${r.published.slice(0, 7)}` : r.published
 const PAGE = 50
 
@@ -44,7 +44,7 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
   const [finance, setFinance] = useState<string[]>([])
   const [dateOpt, setDateOpt] = useState<typeof DATE_OPTS[number]>('全部日期')
   const [newOpt, setNewOpt] = useState<typeof NEW_OPTS[number]>('全部')
-  const [sort, setSort] = useState<typeof SORT_OPTS[number]>('最新公告優先')
+  const [sort, setSort] = useState<typeof SORT_OPTS[number]>('截標日期（緊急先）')
   const [showGone, setShowGone] = useState(false)
   const [pdfOnly, setPdfOnly] = useState(false)
   const [needFix, setNeedFix] = useState(false)
@@ -68,9 +68,12 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
     })
     const name = (r: TenderRow) => r.school?.name || r.site
     if (sort === '最新公告優先') out.sort((a, b) => Number(b.isNew) - Number(a.isNew) || b.date.localeCompare(a.date) || b.first_seen.localeCompare(a.first_seen))
-    else if (sort === '截標日期（最近先）') out.sort((a, b) => {
-      const k = (r: TenderRow) => r.status === '未截標' ? '0' + r.deadline : r.deadline ? '1' + (9e8 - Date.parse(r.deadline) / 1e5) : '2'
-      return k(a).localeCompare(k(b)) || b.date.localeCompare(a.date)
+    else if (sort === '截標日期（緊急先）') out.sort((a, b) => {
+      // 未截標: fewest days left first; then 已截標: most recently closed first; no deadline last
+      const g = (r: TenderRow) => r.status === '未截標' ? 0 : r.deadline ? 1 : 2
+      return g(a) - g(b)
+        || (g(a) === 0 ? a.deadline!.localeCompare(b.deadline!) : g(a) === 1 ? b.deadline!.localeCompare(a.deadline!) : 0)
+        || b.date.localeCompare(a.date)
     })
     else out.sort((a, b) => name(a).localeCompare(name(b), 'zh-HK'))
     return out
@@ -189,17 +192,21 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
           <table className="min-w-full text-sm">
             <thead className="bg-slate-100 text-left text-xs font-semibold text-slate-600">
               <tr>
+                <th className="px-3 py-2.5">截標日期</th>
                 <th className="px-3 py-2.5">公告日期</th>
                 <th className="px-3 py-2.5">學校</th>
                 <th className="px-3 py-2.5">公告標題</th>
                 <th className="px-3 py-2.5">工程種類</th>
-                <th className="px-3 py-2.5">截標日期</th>
                 <th className="px-3 py-2.5">連結</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {pageRows.map(r => (
                 <tr key={r.id} className={`align-top hover:bg-slate-50 ${!r.active ? 'opacity-60' : ''}`}>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <div className="font-medium text-slate-800">{r.deadline || '—'}</div>
+                    <div className="mt-1">{statusBadge(r)}</div>
+                  </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     <div className="font-medium text-slate-800">{pubText(r) || '—'}</div>
                     <div className="mt-1 flex flex-wrap gap-1">
@@ -225,10 +232,6 @@ export default function TendersPage({ rows, meta, monitoredSchools }: { rows: Te
                     <div className="flex max-w-[12rem] flex-wrap gap-1">
                       {r.types.map(t => <Badge key={t} tone={t === NON_ENG ? 'slate' : 'blue'}>{t}</Badge>)}
                     </div>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3">
-                    <div className="font-medium text-slate-800">{r.deadline || '—'}</div>
-                    <div className="mt-1">{statusBadge(r)}</div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs">
                     <div className="flex flex-col gap-1">
