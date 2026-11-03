@@ -97,6 +97,11 @@ def same_site_ok(s, u, sites):
     """Profile only points to another page of a site we can already read: keep crawling from the current URL."""
     return bool(s['website']) and host(u) == host(s['website']) and sites.get(s['website'], {}).get('reason') not in ('網站無法連線', '尚未掃描', None)
 
+def new_site_failed(s, u, sites):
+    """Profile URL was tried before and couldn't be reached, while the EDB URL could: keep the EDB URL."""
+    old = sites.get(s.get('website_edb', s['website']), {}).get('reason')
+    return sites.get(u, {}).get('reason') == '網站無法連線' and old not in ('網站無法連線', '尚未掃描', None)
+
 def main():
     schools = monitor.build_schools(monitor.load_edb())
     prof = json.load(open(PROFILES)) if 'cached' in sys.argv and os.path.exists(PROFILES) else collect(schools)
@@ -106,13 +111,17 @@ def main():
     found = monitor.load('found_sites.json', {})
     cand = [(s['id'], res[s['id']]['url'], res[s['id']]['src']) for s in schools
             if res[s['id']].get('url') and not sites.get(s['website'], {}).get('monitored')
-            and crawl.key(res[s['id']]['url']) != crawl.key(s['website'] or 'x') and not same_site_ok(s, res[s['id']]['url'], sites)]
+            and crawl.key(res[s['id']]['url']) != crawl.key(s['website'] or 'x') and not same_site_ok(s, res[s['id']]['url'], sites)
+            and not new_site_failed(s, res[s['id']]['url'], sites)]
     print('official URL differs from current (not monitored)', len(cand), flush=True)
     n = 0
     with cf.ThreadPoolExecutor(8) as ex:
         for (sid, u, src), good in zip(cand, ex.map(lambda c: bool(get(c[1], 2)), cand)):
             if good: found[sid] = {'url': u, 'at': monitor.TODAY, 'src': src}; n += 1
             print('OK ' if good else '-- ', sid, u, src, flush=True)
+    for s in schools:
+        f = found.get(s['id'], {})
+        if f.get('src') in (*CHSC, '幼稚園概覽') and new_site_failed(s, f['url'], sites): found.pop(s['id']); print('revert', s['id'], f['url'])
     monitor.save('found_sites.json', found)
     print('updated', n, 'schools to official websites; sponsors', sum(bool(r.get('sponsor')) for r in res.values()))
 
